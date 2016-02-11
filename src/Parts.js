@@ -1,4 +1,5 @@
 define(function(){
+	var CONTROL_CHANGE_SUSTAIN_PEDAL = 64;
 
 	/**
 	 *  Convert a MIDI number to scientific pitch notation
@@ -22,7 +23,7 @@ define(function(){
 	/**
 	 *  Parse noteOn/Off from the tracks in midi JSON format into
 	 *  Tone.Score-friendly format.
-	 *  @param  {Object}  midiJson 
+	 *  @param  {Object}  midiJson
 	 *  @param  {Object}  options   options for parseing
 	 *  @return  {Object}
 	 */
@@ -37,6 +38,7 @@ define(function(){
 		options.velocity = typeof options.velocity === "undefined" ? true : options.velocity;
 
 		var output = {};
+		var pedal = false;
 
 		//parse each of the tracks
 		for (var i = 0; i < midiJson.tracks.length; i++) {
@@ -50,7 +52,7 @@ define(function(){
 				if (evnt.subtype === "noteOn"){
 					var noteObj = {
 						ticks : currentTime,
-						time : currentTime, 
+						time : currentTime,
 						note : evnt.noteNumber,
 					};
 					if (options.midiNote){
@@ -82,6 +84,31 @@ define(function(){
 					trackName = evnt.text;
 					//Ableton Live adds an additional character to the track name
 					trackName = trackName.replace(/\u0000/g, '');
+				} else if (evnt.controllerType === CONTROL_CHANGE_SUSTAIN_PEDAL) {
+
+					if (evnt.value >= 64 && !pedal) {
+						var obj = {
+							ticks: currentTime,
+							time: currentTime,
+							eventName: "sustain"
+						};
+						pedal = true;
+						trackNotes.push(obj);
+					} else if (evnt.value < 64 && pedal) {
+						for (var k = trackNotes.length - 1; k >= 0; k--){
+							var trackNote = trackNotes[k];
+							if (trackNote.eventName === "sustain" && typeof trackNote.duration === "undefined"){
+								if (options.duration){
+									trackNote.duration = ticksToToneTicks(currentTime - trackNote.ticks, ticksPerBeat, options.PPQ);
+								}
+								trackNote.time = ticksToToneTicks(trackNote.time, ticksPerBeat, options.PPQ);
+								delete trackNote.note;
+								delete trackNote.ticks;
+								break;
+							}
+						}
+						pedal = false;
+					}
 				}
 			}
 			if (trackNotes.length > 0){
