@@ -46,10 +46,15 @@ define(function(){
 			var trackName = "track"+i;
 			var trackNotes = [];
 			var currentTime = 0;
+
+			permuteImplicitNoteOff(track);
+
 			for (var j = 0; j < track.length; j++){
 				var evnt = track[j];
 				currentTime += evnt.deltaTime;
+
 				if (evnt.subtype === "noteOn"){
+
 					var noteObj = {
 						ticks : currentTime,
 						time : currentTime,
@@ -98,6 +103,7 @@ define(function(){
 						for (var k = trackNotes.length - 1; k >= 0; k--){
 							var trackNote = trackNotes[k];
 							if (trackNote.eventName === "sustain" && typeof trackNote.duration === "undefined"){
+
 								if (options.duration){
 									trackNote.duration = ticksToToneTicks(currentTime - trackNote.ticks, ticksPerBeat, options.PPQ);
 								}
@@ -116,5 +122,22 @@ define(function(){
 			}
 		}
 		return output;
+
+		function permuteImplicitNoteOff(events) {
+			for (var i = 1; i < events.length - 1; i++) {
+				var a = events[i],
+				  b = events[i - 1],
+				  tmp;
+
+				if (a.deltaTime === 0 && a.subtype === 'noteOff' && b.subtype === 'noteOn' && a.noteNumber === b.noteNumber) {
+					events[i] = b;
+					events[i - 1] = a;
+
+					tmp = a.deltaTime;
+					a.deltaTime = b.deltaTime;
+					b.deltaTime = tmp;
+				}
+			}
+		}
 	};
 });
