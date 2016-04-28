@@ -31,19 +31,18 @@ define(function(){
 		var ticksPerBeat = midiJson.header.ticksPerBeat;
 		//some default values
 		options = typeof options !== "object" ? {} : options;
-		options.PPQ = typeof options.PPQ === "undefined" ? 48 : options.PPQ;
+		options.PPQ = typeof options.PPQ === "undefined" ? 192 : options.PPQ;
 		options.midiNote = typeof options.midiNote === "undefined" ? true : options.midiNote;
 		options.noteName = typeof options.noteName === "undefined" ? true : options.noteName;
 		options.duration = typeof options.duration === "undefined" ? true : options.duration;
 		options.velocity = typeof options.velocity === "undefined" ? true : options.velocity;
 
-		var output = {};
+		var output = [];
 		var pedal = false;
 
 		//parse each of the tracks
 		for (var i = 0; i < midiJson.tracks.length; i++) {
 			var track = midiJson.tracks[i];
-			var trackName = "track"+i;
 			var trackNotes = [];
 			var currentTime = 0;
 
@@ -118,7 +117,7 @@ define(function(){
 				}
 			}
 			if (trackNotes.length > 0){
-				output[trackName] = trackNotes;
+				output.push(trackNotes);
 			}
 		}
 		return output;
