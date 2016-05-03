@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pioug/MidiConvert.svg?branch=master)](https://travis-ci.org/pioug/MidiConvert)
+
 ## [DEMO](http://tonejs.github.io/MidiConvert/)
 
 MidiConvert has two methods for parsing binary midi files into a format that Tone.js can easily consume:
@@ -23,14 +25,14 @@ Tone.Transport.set(transportSettings);
 
 #### `parseParts(BinaryString midiBlob, [Object options]) => Array`
 
-This function parses all of the tracks from the midi file and returns an array of the tracks. Each track is an array of notes. 
+This function parses all of the tracks from the midi file and returns an array of the tracks. Each track is an array of notes.
 
 ```javascript
 var parts = MidiConvert.parseParts(midiBlob);
 //returns =>
 //[
 //	//track 0
-//	[ 
+//	[
 //	{
 //		"time": "0i",
 //		"midiNote": 67,
@@ -52,22 +54,22 @@ The options object encodes how the MIDI file is parsed:
 ```javascript
 MidiConvert.parseParts(midiBlob, {
 	/*
-	 *	the pulses per quarter note at which 
+	 *	the pulses per quarter note at which
 	 *	the midi file is parsed.
 	 */
 	PPQ : 192,
 	/*
-	 *	if the midi note number should be 
+	 *	if the midi note number should be
 	 *	included in the output.
 	 */
 	midiNote : true,
 	/*
-	 *	if the notes scientific pitch notation 
+	 *	if the notes scientific pitch notation
 	 *	should be included in the output.
 	 */
 	noteName : true,
 	/*
-	 *	if the normalized velocity should be included 
+	 *	if the normalized velocity should be included
 	 * 	in the output
 	 */
 	velocity : true,
@@ -92,7 +94,7 @@ fs.readFile(test.mid, "binary", function(err, midiBlob){
 });
 ```
 
-In the browser, the MIDI blob as a string can be obtained using the [FileReader API](https://developer.mozilla.org/en-US/docs/Web/API/FileReader). 
+In the browser, the MIDI blob as a string can be obtained using the [FileReader API](https://developer.mozilla.org/en-US/docs/Web/API/FileReader).
 
 ```javascript
 var reader = new FileReader();
