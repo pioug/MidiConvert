@@ -33,10 +33,9 @@ define(["midi-file-parser", "Transport", "Parts"], function(midiFileParser, Tran
 					}
 				}
 
-				midiJson.tracks = tracks;
+				midiJson.tracks = compact(tracks);
 				midiJson.header.trackCount = tracks.length;
 			}
-
 
 			return Parts(midiJson, options);
 		},
@@ -50,4 +49,19 @@ define(["midi-file-parser", "Transport", "Parts"], function(midiFileParser, Tran
 			return Transport(midiJson);
 		}
 	};
+
+	function compact(array) {
+	  var index = -1;
+		var length = array ? array.length : 0;
+		var resIndex = 0;
+		var result = [];
+
+	  while (++index < length) {
+	    var value = array[index];
+	    if (value) {
+	      result[resIndex++] = value;
+	    }
+	  }
+	  return result;
+	}
 });
