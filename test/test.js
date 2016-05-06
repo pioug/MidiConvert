@@ -186,3 +186,36 @@ describe("Prelude in C minor format 0 midi file", function(){
 	});
 
 });
+
+describe("Single track,  multi channel midi file (type 0)", function(){
+
+	var midiData;
+	var midiJson;
+
+	before(function(done){
+		fs.readFile("midi/single-track-multi-channel.mid", "binary", function(err, data){
+			if (!err){
+				midiData = data;
+				fs.readFile("midi/single-track-multi-channel.json", "utf8", function(err, json){
+					if (!err){
+						midiJson = JSON.parse(json);
+						done();
+					}
+				});
+			}
+		});
+	});
+
+	it("extracts the tracks from the file", function(){
+		var trackData = MidiConvert.parseParts(midiData, {
+			PPQ : 192,
+			midiNote : true,
+			noteName : true,
+			velocity : true,
+			duration: true
+		});
+		expect(trackData.length).to.equal(5);
+		expect(trackData).to.deep.equal(midiJson);
+	});
+
+});
