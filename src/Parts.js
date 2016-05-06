@@ -21,6 +21,31 @@ define(function(){
 	}
 
 	/**
+	 *  Permute noteOff happening after noteOn (of the same note) without delta time.
+	 *  @param {Array} track Array of MIDI events
+	 *  @returns {Array} Sorted MIDI events
+	 */
+	function permuteImplicitNoteOff(track) {
+		var events = track.slice();
+
+		for (var i = 1; i < events.length - 1; i++) {
+			var event = events[i],
+			  prevEvent = events[i - 1];
+
+			if (event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
+				var tmp = event.deltaTime;
+				event.deltaTime = prevEvent.deltaTime;
+				prevEvent.deltaTime = tmp;
+
+				events[i] = prevEvent;
+				events[i - 1] = event;
+			}
+		}
+
+		return events;
+	}
+
+	/**
 	 *  Parse noteOn/Off from the tracks in midi JSON format into
 	 *  Tone.Score-friendly format.
 	 *  @param  {Object}  midiJson
@@ -46,7 +71,9 @@ define(function(){
 			var trackNotes = [];
 			var currentTime = 0;
 
-			permuteImplicitNoteOff(track);
+			if (options.duration) {
+				track = permuteImplicitNoteOff(track);
+			}
 
 			for (var j = 0; j < track.length; j++){
 				var evnt = track[j];
@@ -121,22 +148,5 @@ define(function(){
 			}
 		}
 		return output;
-
-		function permuteImplicitNoteOff(events) {
-			for (var i = 1; i < events.length - 1; i++) {
-				var a = events[i],
-				  b = events[i - 1],
-				  tmp;
-
-				if (a.deltaTime === 0 && a.subtype === 'noteOff' && b.subtype === 'noteOn' && a.noteNumber === b.noteNumber) {
-					events[i] = b;
-					events[i - 1] = a;
-
-					tmp = a.deltaTime;
-					a.deltaTime = b.deltaTime;
-					b.deltaTime = tmp;
-				}
-			}
-		}
 	};
 });

@@ -187,6 +187,39 @@ describe("Prelude in C minor format 0 midi file", function(){
 
 });
 
+describe("Funk kit with implicit note off events", function(){
+
+	var midiData;
+	var midiJson;
+
+	before(function(done){
+		fs.readFile("midi/funk-kit.mid", "binary", function(err, data){
+			if (!err){
+				midiData = data;
+				fs.readFile("midi/funk-kit.json", "utf8", function(err, json){
+					if (!err){
+						midiJson = JSON.parse(json);
+						done();
+					}
+				});
+			}
+		});
+	});
+
+	it("permutes noteOff and noteOn events", function(){
+		var trackData = MidiConvert.parseParts(midiData, {
+			PPQ : 192,
+			midiNote : true,
+			noteName : true,
+			velocity : true,
+			duration: true
+		});
+		expect(trackData.length).to.equal(1);
+		expect(trackData).to.deep.equal(midiJson);
+	});
+
+});
+
 describe("Single track,  multi channel midi file (type 0)", function(){
 
 	var midiData;
