@@ -12,29 +12,7 @@ define(["midi-file-parser", "Transport", "Parts"], function(midiFileParser, Tran
 			var midiJson = midiFileParser(fileBlob);
 
 			if (midiJson.header.formatType === 0) {
-				var tracks = [];
-				var absoluteTime = 0;
-				for (var i = 0; i < midiJson.tracks[0].length; i++) {
-					var event = midiJson.tracks[0][i];
-					var channel = event.channel || 0;
-					var prevEvent;
-
-					absoluteTime += event.deltaTime;
-					event.absoluteTime = absoluteTime;
-
-					tracks[channel] = tracks[channel] || [];
-					prevEvent = tracks[channel][tracks[channel].length - 1];
-					tracks[channel].push(event);
-
-					if (prevEvent) {
-						event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
-					} else {
-						event.deltaTime = event.absoluteTime;
-					}
-				}
-
-				midiJson.tracks = compact(tracks);
-				midiJson.header.trackCount = tracks.length;
+				splitType0(midiJson);
 			}
 
 			return Parts(midiJson, options);
@@ -48,33 +26,38 @@ define(["midi-file-parser", "Transport", "Parts"], function(midiFileParser, Tran
 			var midiJson = midiFileParser(fileBlob);
 
 			if (midiJson.header.formatType === 0) {
-				var tracks = [];
-				var absoluteTime = 0;
-				for (var i = 0; i < midiJson.tracks[0].length; i++) {
-					var event = midiJson.tracks[0][i];
-					var channel = event.channel || 0;
-					var prevEvent;
-
-					absoluteTime += event.deltaTime;
-					event.absoluteTime = absoluteTime;
-
-					tracks[channel] = tracks[channel] || [];
-					prevEvent = tracks[channel][tracks[channel].length - 1];
-					tracks[channel].push(event);
-
-					if (prevEvent) {
-						event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
-					} else {
-						event.deltaTime = event.absoluteTime;
-					}
-				}
-
-				midiJson.tracks = compact(tracks);
-				midiJson.header.trackCount = tracks.length;
+				splitType0(midiJson);
 			}
+
 			return Transport(midiJson);
 		}
 	};
+
+	function splitType0(midiJson) {
+		var tracks = [];
+		var absoluteTime = 0;
+		for (var i = 0; i < midiJson.tracks[0].length; i++) {
+			var event = midiJson.tracks[0][i];
+			var channel = event.channel || 0;
+			var prevEvent;
+
+			absoluteTime += event.deltaTime;
+			event.absoluteTime = absoluteTime;
+
+			tracks[channel] = tracks[channel] || [];
+			prevEvent = tracks[channel][tracks[channel].length - 1];
+			tracks[channel].push(event);
+
+			if (prevEvent) {
+				event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
+			} else {
+				event.deltaTime = event.absoluteTime;
+			}
+		}
+
+		midiJson.tracks = compact(tracks);
+		midiJson.header.trackCount = tracks.length;
+	}
 
 	function compact(array) {
 	  var index = -1;
