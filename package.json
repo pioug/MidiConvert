@@ -1,5 +1,5 @@
 {
-  "name": "MidiConvert",
+  "name": "@pioug/MidiConvert",
   "version": "1.5.1",
   "description": "Convert binary midi into Tone.js-friendly JSON",
   "main": "build/MidiConvert.js",
@@ -8,14 +8,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Tonejs/MidiConvert.git"
+    "url": "https://github.com/pioug/MidiConvert.git"
   },
   "author": "Yotam Mann",
+  "contributors": [
+    "Gilles Piou <gilles.piou@gmail.com>"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Tonejs/MidiConvert/issues"
+    "url": "https://github.com/pioug/MidiConvert/issues"
   },
-  "homepage": "http://tonejs.github.com/MidiConvert/convert",
   "devDependencies": {
     "chai": "^3.3.0",
     "midi-file-parser": "^1.0.0",
