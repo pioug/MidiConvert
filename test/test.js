@@ -206,6 +206,12 @@ describe("Single track,  multi channel midi file (type 0)", function(){
 		});
 	});
 
+	it("gets the list of instruments", function(){
+		var transportData = MidiConvert.parseTransport(midiData);
+		expect(transportData).to.have.property("instruments");
+		expect(transportData.instruments.length).to.equal(5);
+	});
+
 	it("extracts the tracks from the file", function(){
 		var trackData = MidiConvert.parseParts(midiData, {
 			PPQ : 192,
