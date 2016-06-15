@@ -1,93 +1,64 @@
-define(["midi-file-parser", "Transport", "Parts"], function(midiFileParser, Transport, Parts){
+import midiFileParser from './MidiFile.js';
+import transport from './Transport.js';
+import parts from './Parts.js';
 
-	return {
-		/**
-		 *  Convert a midi file to a Tone.Score-friendly JSON representation
-		 *  @param  {Binary String}  fileBlob  The output from fs.readFile or FileReader
-		 *  @param  {Object}  options   The parseing options
-		 *  @return  {Object}  A Tone.js-friendly object which can be consumed
-		 *                       by Tone.Score
-		 */
-		parseParts : function(fileBlob, options){
-			var midiJson = midiFileParser(fileBlob);
+export default { parse };
 
-			if (midiJson.header.formatType === 0) {
-				var tracks = [];
-				var absoluteTime = 0;
-				for (var i = 0; i < midiJson.tracks[0].length; i++) {
-					var event = midiJson.tracks[0][i];
-					var channel = event.channel || 0;
-					var prevEvent;
+/**
+ *  Convert a midi file to a Tone.Part-friendly JSON representation
+ *  @param {Blob} fileBlob The output from fs.readFile or FileReader
+ *  @param {Object} options The parsing options
+ *  @return {Object} A Tone.js-friendly object which can be consumed by Tone.Part
+ */
+function parse(fileBlob, options) {
+  var midiJson = midiFileParser(fileBlob);
 
-					absoluteTime += event.deltaTime;
-					event.absoluteTime = absoluteTime;
+  if (midiJson.header.formatType === 0) {
+    splitType0(midiJson);
+  }
 
-					tracks[channel] = tracks[channel] || [];
-					prevEvent = tracks[channel][tracks[channel].length - 1];
-					tracks[channel].push(event);
+  return {
+    parts: parts(midiJson, options),
+    transport: transport(midiJson)
+  };
+}
 
-					if (prevEvent) {
-						event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
-					} else {
-						event.deltaTime = event.absoluteTime;
-					}
-				}
+function splitType0(midiJson) {
+  var tracksMap = {},
+    absoluteTime = 0,
+    tracks = [],
+    event,
+    channel,
+    prevEvent,
+    track,
+    i;
 
-				midiJson.tracks = compact(tracks);
-				midiJson.header.trackCount = tracks.length;
-			}
+  for (i = 0; i < midiJson.tracks[0].length; i++) {
+    event = midiJson.tracks[0][i];
+    channel = event.channel || 0;
 
-			return Parts(midiJson, options);
-		},
-		/**
-		 *  Parse the Transport-relevant descriptions from the MIDI file blob
-		 *  @param  {Binary String}  fileBlob  The output from fs.readFile or FileReader
-		 *  @return  {Object}
-		 */
-		parseTransport : function(fileBlob){
-			var midiJson = midiFileParser(fileBlob);
+    absoluteTime += event.deltaTime;
+    event.absoluteTime = absoluteTime;
 
-			if (midiJson.header.formatType === 0) {
-				var tracks = [];
-				var absoluteTime = 0;
-				for (var i = 0; i < midiJson.tracks[0].length; i++) {
-					var event = midiJson.tracks[0][i];
-					var channel = event.channel || 0;
-					var prevEvent;
+    tracksMap[channel] = tracksMap[channel] || [];
+    prevEvent = tracksMap[channel][tracksMap[channel].length - 1];
+    tracksMap[channel].push(event);
 
-					absoluteTime += event.deltaTime;
-					event.absoluteTime = absoluteTime;
+    if (prevEvent) {
+      event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
+    } else {
+      event.deltaTime = event.absoluteTime;
+    }
+  }
 
-					tracks[channel] = tracks[channel] || [];
-					prevEvent = tracks[channel][tracks[channel].length - 1];
-					tracks[channel].push(event);
+  midiJson.tracks = [];
 
-					if (prevEvent) {
-						event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
-					} else {
-						event.deltaTime = event.absoluteTime;
-					}
-				}
+  for (track in tracksMap) {
+    if (tracksMap.hasOwnProperty(track)) {
+      tracks.push(tracksMap[track]);
+    }
+  }
 
-				midiJson.tracks = compact(tracks);
-				midiJson.header.trackCount = tracks.length;
-			}
-			return Transport(midiJson);
-		}
-	};
-
-	function compact(array) {
-	  var index = -1;
-		var length = array ? array.length : 0;
-		var resIndex = 0;
-		var result = [];
-
-	  while (++index < length) {
-	    var value = array[index];
-	    if (value) {
-	      result[resIndex++] = value;
-	    }
-	  }
-	  return result;
-	}
-});
+  midiJson.tracks = tracks;
+  midiJson.header.trackCount = tracks.length;
+}

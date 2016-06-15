@@ -1,0 +1,19 @@
+{
+  "extends": "bandlab/base",
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "globals": {
+    "before": true,
+    "describe": true,
+    "expect": true,
+    "it": true
+  },
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "rules": {
+    "space-before-function-paren": [2, "never"]
+  }
+}
