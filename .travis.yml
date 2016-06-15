@@ -1,14 +1,9 @@
 language: node_js
 node_js:
-- '4.4.3'
-env:
-  matrix:
-  - CXX=g++-4.8
+- '6.2.1'
 cache:
   directories:
   - node_modules
-before_script:
-- webpack
 notifications:
   email:
     on_success: never
