@@ -5,7 +5,7 @@
   "main": "build/MidiConvert.js",
   "scripts": {
     "build": "rollup -f umd -n MidiConvert src/MidiConvert.js | java -jar ./node_modules/google-closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --language_out=ECMASCRIPT5_STRICT --js_output_file build/MidiConvert.js",
-    "test": "eslint src/*.js test/*.js && mocha"
+    "test": "eslint src/*.js test/*.js && ava test/*.js"
   },
   "repository": {
     "type": "git",
@@ -20,11 +20,10 @@
     "url": "https://github.com/pioug/MidiConvert/issues"
   },
   "devDependencies": {
-    "chai": "3.5.0",
+    "ava": "0.15.2",
     "eslint": "2.12.0",
     "eslint-config-bandlab": "2.8.0",
     "google-closure-compiler": "20160517.1.0",
-    "mocha": "2.5.3",
     "rollup": "0.30.0"
   }
 }

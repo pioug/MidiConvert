@@ -4,16 +4,12 @@
     "es6": true,
     "node": true
   },
-  "globals": {
-    "before": true,
-    "describe": true,
-    "expect": true,
-    "it": true
-  },
   "parserOptions": {
     "sourceType": "module"
   },
   "rules": {
+    "no-multi-spaces": [2],
+    "space-before-blocks": ["error", "always"],
     "space-before-function-paren": [2, "never"]
   }
 }
