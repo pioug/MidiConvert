@@ -327,7 +327,6 @@
    */
   function parseTransport(midiJson) {
     var ret = {
-        bpm: 120,
         instruments: []
       },
       track,
@@ -352,6 +351,7 @@
         }
       }
     }
+
     return ret;
   }
 
