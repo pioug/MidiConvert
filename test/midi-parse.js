@@ -66,6 +66,7 @@ ava('Prelude in C minor format 0 midi file', function(t) {
       duration: true
     });
 
+  t.falsy(parsedData.transport.bpm, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
 });
 
@@ -80,6 +81,7 @@ ava('Funk kit with implicit note off events', function(t) {
       duration: true
     });
 
+  t.deepEqual(Math.round(parsedData.transport.bpm), 104, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'permutes noteOff and noteOn events');
 });
 
@@ -94,6 +96,7 @@ ava('Single track, multi channel midi file (type 0)', function(t) {
       duration: true
     });
 
+  t.deepEqual(parsedData.transport.bpm, 100, 'gets the bpm from the file');
   t.deepEqual(parsedData.transport.instruments, [ 1, 90, 1, 81, 0 ], 'gets the list of instruments');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
 });
