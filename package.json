@@ -5,7 +5,7 @@
   "main": "build/MidiConvert.js",
   "scripts": {
     "build": "rollup -f umd -n MidiConvert src/MidiConvert.js | java -jar ./node_modules/google-closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --language_out=ECMASCRIPT5_STRICT --js_output_file build/MidiConvert.js",
-    "test": "eslint src/*.js test/*.js && ava test/*.js"
+    "test": "eslint src/*.js test/*.js && nyc ava test/*.js"
   },
   "repository": {
     "type": "git",
@@ -21,9 +21,11 @@
   },
   "devDependencies": {
     "ava": "0.15.2",
+    "coveralls": "2.11.9",
     "eslint": "2.12.0",
     "eslint-config-bandlab": "2.9.0",
     "google-closure-compiler": "20160517.1.0",
+    "nyc": "6.6.1",
     "rollup": "0.31.2"
   }
 }
