@@ -100,3 +100,17 @@ ava('Single track, multi channel midi file (type 0)', function(t) {
   t.deepEqual(parsedData.transport.instruments, [ 1, 90, 1, 81, 0 ], 'gets the list of instruments');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
 });
+
+ava('Billie Jean, with a last note without duration', function(t) {
+  var midiData = fs.readFileSync('./midi/117_BillieJean_MichaelJackson2.mid', 'binary'),
+    midiJson = require('./midi/117_BillieJean_MichaelJackson2.json', 'utf8'),
+    parsedData = MidiConvert.parse(midiData, {
+      PPQ: 192,
+      midiNote: true,
+      noteName: true,
+      velocity: true,
+      duration: true
+    });
+
+  t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file without permuting the noteOn/noteOff events');
+});
