@@ -7,7 +7,6 @@ export default parseTransport;
  */
 function parseTransport(midiJson) {
   var ret = {
-      bpm: 120,
       instruments: []
     },
     track,
@@ -32,5 +31,6 @@ function parseTransport(midiJson) {
       }
     }
   }
+
   return ret;
 }

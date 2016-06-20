@@ -1,4 +1,4 @@
-# MidiConvert [![Build Status](https://travis-ci.org/pioug/MidiConvert.svg?branch=master)](https://travis-ci.org/pioug/MidiConvert)
+# MidiConvert [![Build Status](https://travis-ci.org/pioug/MidiConvert.svg?branch=master)](https://travis-ci.org/pioug/MidiConvert) [![Coverage Status](https://coveralls.io/repos/github/pioug/MidiConvert/badge.svg?branch=coverage)](https://coveralls.io/github/pioug/MidiConvert?branch=coverage)
 
 This is a fork of [Tonejs/MidiConvert](https://github.com/Tonejs/MidiConvert). The fork has diverged since with the following features:
  - Output sustain pedal events

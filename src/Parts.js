@@ -28,10 +28,14 @@ function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
  */
 function permuteImplicitNoteOff(track) {
   var events = track.slice(),
-    i,
+    i = 0,
     event,
     prevEvent,
     tmp;
+
+  if (!hasConsecutiveNoteOn(track)) {
+    return events;
+  }
 
   for (i = 1; i < events.length - 1; i++) {
     event = events[i];
@@ -48,6 +52,35 @@ function permuteImplicitNoteOff(track) {
   }
 
   return events;
+}
+
+/**
+ *  Look for consecutive 'noteOn' to decide if permutation is necessary
+ *  @param {Array} track Array of MIDI events
+ *  @returns {Boolean} true if consecutive 'noteOn' detected
+ */
+function hasConsecutiveNoteOn(track) {
+  var currentNote = {},
+    i = 0,
+    event;
+
+  while (i < track.length) {
+    event = track[i];
+
+    if (event.subtype === 'noteOn' && currentNote[event.noteNumber]) {
+      return true;
+    }
+
+    if (event.subtype === 'noteOn') {
+      currentNote[event.noteNumber] = true;
+    } else if (event.subtype === 'noteOff') {
+      currentNote[event.noteNumber] = false;
+    }
+
+    i++;
+  }
+
+  return false;
 }
 
 /**
