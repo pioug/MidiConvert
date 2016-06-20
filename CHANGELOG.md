@@ -8,6 +8,7 @@
 - Use nyc for test coverage
 - Add non-minified build
 - Return no BPM if not specified inside MIDI file
+- Improve condition before permuting noteOn/noteOff events
 
 ## 2.0.0
 
