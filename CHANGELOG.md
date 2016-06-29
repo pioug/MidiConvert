@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 2.1.1
 
 ### What's new
 
