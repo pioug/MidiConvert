@@ -115,7 +115,7 @@ ava('Billie Jean, with a last note without duration', function(t) {
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file without permuting the noteOn/noteOff events');
 });
 
-ava('Bond', function(t) {
+ava('James Bond Theme, with multiple Program Change events in each track', function(t) {
   var midiData = fs.readFileSync('./midi/Movie_Themes_-_James_Bond.mid', 'binary'),
     midiJson = require('./midi/Movie_Themes_-_James_Bond.json', 'utf8'),
     parsedData = MidiConvert.parse(midiData, {
