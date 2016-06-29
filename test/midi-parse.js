@@ -114,3 +114,17 @@ ava('Billie Jean, with a last note without duration', function(t) {
 
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file without permuting the noteOn/noteOff events');
 });
+
+ava('Bond', function(t) {
+  var midiData = fs.readFileSync('./midi/Movie_Themes_-_James_Bond.mid', 'binary'),
+    midiJson = require('./midi/Movie_Themes_-_James_Bond.json', 'utf8'),
+    parsedData = MidiConvert.parse(midiData, {
+      PPQ: 192,
+      midiNote: true,
+      noteName: true,
+      velocity: true,
+      duration: true
+    });
+
+  t.deepEqual(parsedData.transport.instruments, midiJson.transport.instruments, 'extracts the instruments without redundancy');
+});
