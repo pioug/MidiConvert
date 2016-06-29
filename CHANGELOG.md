@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1
+
+### What's new
+
+- Remove redundancy in instrument list
+
 ## 2.1.0
 
 ### What's new
