@@ -9,6 +9,7 @@ function parseTransport(midiJson) {
   var ret = {
       instruments: []
     },
+    instrumentsMap = {},
     track,
     i,
     j,
@@ -26,9 +27,15 @@ function parseTransport(midiJson) {
         }
       } else if (datum.type === 'channel') {
         if (datum.subtype === 'programChange') {
-          ret.instruments.push(datum.channel === 9 ? 0 : datum.programNumber + 1);
+          instrumentsMap[datum.channel] = datum.channel === 9 ? 0 : datum.programNumber + 1;
         }
       }
+    }
+  }
+
+  for (track in instrumentsMap) {
+    if (instrumentsMap.hasOwnProperty(track)) {
+      ret.instruments.push(instrumentsMap[track]);
     }
   }
 
