@@ -320,45 +320,49 @@
     }
   }
 
+  function toArray(hash) {
+    var arr = [],
+      key;
+    for (key in hash) {
+      if (hash.hasOwnProperty(key)) {
+        arr.push(hash[key]);
+      }
+    }
+    return arr;
+  }
+
   /**
    *  Parse tempo and time signature from the midiJson
    *  @param {Object} midiJson
    *  @return {Object}
    */
   function parseTransport(midiJson) {
-    var ret = {
-        instruments: []
-      },
+    var ret = {},
       instrumentsMap = {},
       track,
       i,
       j,
-      datum;
+      event;
 
     for (i = 0; i < midiJson.tracks.length; i++) {
       track = midiJson.tracks[i];
       for (j = 0; j < track.length; j++) {
-        datum = track[j];
-        if (datum.type === 'meta') {
-          if (datum.subtype === 'timeSignature') {
-            ret.timeSignature = [datum.numerator, datum.denominator];
-          } else if (datum.subtype === 'setTempo') {
-            ret.bpm = 60000000 / datum.microsecondsPerBeat;
+        event = track[j];
+        if (event.type === 'meta') {
+          if (event.subtype === 'timeSignature') {
+            ret.timeSignature = [event.numerator, event.denominator];
+          } else if (event.subtype === 'setTempo') {
+            ret.bpm = 60000000 / event.microsecondsPerBeat;
           }
-        } else if (datum.type === 'channel') {
-          if (datum.subtype === 'programChange') {
-            instrumentsMap[datum.channel] = datum.channel === 9 ? 0 : datum.programNumber + 1;
+        } else if (event.type === 'channel') {
+          if (event.subtype === 'programChange') {
+            instrumentsMap[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
           }
         }
       }
     }
 
-    for (track in instrumentsMap) {
-      if (instrumentsMap.hasOwnProperty(track)) {
-        ret.instruments.push(instrumentsMap[track]);
-      }
-    }
-
+    ret.instruments = toArray(instrumentsMap);
     return ret;
   }
 
@@ -586,7 +590,6 @@
       event,
       channel,
       prevEvent,
-      track,
       i;
 
     for (i = 0; i < midiJson.tracks[0].length; i++) {
@@ -607,15 +610,7 @@
       }
     }
 
-    midiJson.tracks = [];
-
-    for (track in tracksMap) {
-      if (tracksMap.hasOwnProperty(track)) {
-        tracks.push(tracksMap[track]);
-      }
-    }
-
-    midiJson.tracks = tracks;
+    midiJson.tracks = toArray(tracksMap);
     midiJson.header.trackCount = tracks.length;
   }
 

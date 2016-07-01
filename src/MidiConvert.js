@@ -1,6 +1,7 @@
 import midiFileParser from './MidiFile.js';
 import transport from './Transport.js';
 import parts from './Parts.js';
+import { toArray } from './Util.js';
 
 export default { parse };
 
@@ -30,7 +31,6 @@ function splitType0(midiJson) {
     event,
     channel,
     prevEvent,
-    track,
     i;
 
   for (i = 0; i < midiJson.tracks[0].length; i++) {
@@ -51,14 +51,6 @@ function splitType0(midiJson) {
     }
   }
 
-  midiJson.tracks = [];
-
-  for (track in tracksMap) {
-    if (tracksMap.hasOwnProperty(track)) {
-      tracks.push(tracksMap[track]);
-    }
-  }
-
-  midiJson.tracks = tracks;
+  midiJson.tracks = toArray(tracksMap);
   midiJson.header.trackCount = tracks.length;
 }
