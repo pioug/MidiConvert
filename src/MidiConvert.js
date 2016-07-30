@@ -1,9 +1,15 @@
 import midiFileParser from './MidiFile.js';
-import transport from './Transport.js';
+import MidiGen from './MidiGen.js';
+import generate from './Generate.js';
 import parts from './Parts.js';
+import transport from './Transport.js';
 import { toArray } from './Util.js';
 
-export default { parse };
+export default {
+  generate,
+  MidiGen,
+  parse
+};
 
 /**
  *  Convert a midi file to a Tone.Part-friendly JSON representation

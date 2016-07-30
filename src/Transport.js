@@ -1,4 +1,5 @@
 import { toArray } from './Util.js';
+
 export default parseTransport;
 
 /**
@@ -9,6 +10,7 @@ export default parseTransport;
 function parseTransport(midiJson) {
   var ret = {},
     instrumentsMap = {},
+    _instrumentsMap = {},
     track,
     i,
     j,
@@ -27,11 +29,13 @@ function parseTransport(midiJson) {
       } else if (event.type === 'channel') {
         if (event.subtype === 'programChange') {
           instrumentsMap[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
+          _instrumentsMap[event.channel] = event.channel === 9 ? 'percussion' : event.programNumber;
         }
       }
     }
   }
 
   ret.instruments = toArray(instrumentsMap);
+  ret._instruments = toArray(_instrumentsMap);
   return ret;
 }
