@@ -1,18 +1,7 @@
-var CONTROL_CHANGE_SUSTAIN_PEDAL = 64;
+import { EVENT, PPQ } from './Constants.js';
+import { noteFromMidiPitch } from './MidiGenUtil.js';
 
 export default parseParts;
-
-/**
- *  Convert a MIDI number to scientific pitch notation
- *  @param {Number} midi The MIDI note number
- *  @returns {String} The note in scientific pitch notation
- */
-function midiToNote(midi) {
-  var scaleIndexToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
-    octave = Math.floor(midi / 12) - 1,
-    note = midi % 12;
-  return scaleIndexToNote[note] + octave;
-}
 
 /**
  *  Convert MIDI PPQ into Tone.js PPQ
@@ -107,7 +96,7 @@ function parseParts(midiJson, options) {
     obj;
 
   options = options || {};
-  options.PPQ = typeof options.PPQ === 'undefined' ? 192 : options.PPQ;
+  options.PPQ = typeof options.PPQ === 'undefined' ? PPQ : options.PPQ;
   options.noteName = typeof options.noteName === 'undefined' ? true : options.noteName;
   options.duration = typeof options.duration === 'undefined' ? true : options.duration;
   options.velocity = typeof options.velocity === 'undefined' ? true : options.velocity;
@@ -134,7 +123,7 @@ function parseParts(midiJson, options) {
         };
 
         if (options.noteName) {
-          noteObj.noteName = midiToNote(evnt.noteNumber);
+          noteObj.noteName = noteFromMidiPitch(evnt.noteNumber);
         }
 
         if (options.velocity) {
@@ -163,7 +152,7 @@ function parseParts(midiJson, options) {
         // Ableton Live adds an additional character to the track name
         trackName = trackName.replace(/\u0000/g, '');
 
-      } else if (evnt.controllerType === CONTROL_CHANGE_SUSTAIN_PEDAL) {
+      } else if (evnt.controllerType === EVENT.CONTROLLER.DAMPER_PEDAL) {
         if (evnt.value >= 64 && !pedal) {
           obj = {
             _ticks: currentTime,
@@ -189,9 +178,22 @@ function parseParts(midiJson, options) {
         }
       }
     }
+
+    if (options.deterministic) {
+      trackNotes = trackNotes.sort(compareTime);
+    }
+
     if (trackNotes.length > 0) {
       output.push(trackNotes);
     }
   }
   return output;
+}
+
+function compareTime(a, b) {
+  var time = parseInt(a.time) - parseInt(b.time),
+    midiNote = a.midiNote && b.midiNote && a.midiNote - b.midiNote,
+    duration = parseInt(b.duration) - parseInt(a.duration),
+    velocity = b.velocity - a.velocity;
+  return time || midiNote || duration || velocity;
 }

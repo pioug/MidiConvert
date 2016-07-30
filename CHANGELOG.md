@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.0-beta.0
+
+### What's new
+
+- Include functions from [dingram/jsmidgen](https://github.com/dingram/jsmidgen) to have MIDI writing feature
+- Share constants between former codes of `jsmidgen` and `MidiConvert`
+- Add function to set time signature (missing in `jsmidgen`)
+- Add function to generate file buffer from a _MIDI JSON_
+- Add tests that parse then generate MIDI files
+- Update documentation
+
 ## 2.1.1
 
 ### What's new
