@@ -772,7 +772,7 @@
    * DEFAULT_VOLUME.
    * @returns {Track} The current track.
    */
-  Track.prototype.addNoteOn = Track.prototype.noteOn = function(channel, pitch, time, velocity) {
+  Track.prototype.addNoteOn = function(channel, pitch, time, velocity) {
     this.events.push(new MidiEvent({
       type: EVENT.NOTE_ON,
       channel: channel,
@@ -795,7 +795,7 @@
    * defaults to DEFAULT_VOLUME.
    * @returns {Track} The current track.
    */
-  Track.prototype.addNoteOff = Track.prototype.noteOff = function(channel, pitch, time, velocity) {
+  Track.prototype.addNoteOff = function(channel, pitch, time, velocity) {
     this.events.push(new MidiEvent({
       type: EVENT.NOTE_OFF,
       channel: channel,
@@ -806,7 +806,7 @@
     return this;
   };
 
-  Track.prototype.addSustainOn = Track.prototype.sustainOn = function(channel, time) {
+  Track.prototype.addSustainOn = function(channel, time) {
     this.events.push(new MidiEvent({
       type: EVENT.CONTROL_CHANGE,
       channel: channel,
@@ -817,7 +817,7 @@
     return this;
   };
 
-  Track.prototype.addSustainOff = Track.prototype.sustainOff = function(channel, time) {
+  Track.prototype.addSustainOff = function(channel, time) {
     this.events.push(new MidiEvent({
       type: EVENT.CONTROL_CHANGE,
       channel: channel,
@@ -841,7 +841,7 @@
    * defaults to DEFAULT_VOLUME.
    * @returns {Track} The current track.
    */
-  Track.prototype.addNote = Track.prototype.note = function(channel, pitch, dur, time, velocity) {
+  Track.prototype.addNote = function(channel, pitch, dur, time, velocity) {
     this.noteOn(channel, pitch, time, velocity);
     if (dur) {
       this.noteOff(channel, pitch, dur, velocity);
@@ -860,7 +860,7 @@
    * defaults to DEFAULT_VOLUME.
    * @returns {Track} The current track.
    */
-  Track.prototype.addChord = Track.prototype.chord = function(channel, chord, dur, velocity) {
+  Track.prototype.addChord = function(channel, chord, dur, velocity) {
     if (!Array.isArray(chord) && !chord.length) {
       throw new Error('Chord must be an array of pitches');
     }
@@ -886,7 +886,7 @@
    * defaults to 0.
    * @returns {Track} The current track.
    */
-  Track.prototype.setInstrument = Track.prototype.instrument = function(channel, instrument, time) {
+  Track.prototype.setInstrument = function(channel, instrument, time) {
     this.events.push(new MidiEvent({
       type: EVENT.PROGRAM_CHANGE,
       channel: channel,
@@ -896,7 +896,7 @@
     return this;
   };
 
-  Track.prototype.setTimeSignature = Track.prototype.timeSignature = function(numerator, denominator, time) {
+  Track.prototype.setTimeSignature = function(numerator, denominator, time) {
     this.events.push(new MetaEvent({
       type: META_EVENT.TIME_SIGNATURE,
       data: [
@@ -918,7 +918,7 @@
    * defaults to 0.
    * @returns {Track} The current track.
    */
-  Track.prototype.setTempo = Track.prototype.tempo = function(bpm, time) {
+  Track.prototype.setTempo = function(bpm, time) {
     this.events.push(new MetaEvent({
       type: META_EVENT.SET_TEMPO,
       data: mpqnFromBpm(bpm),
