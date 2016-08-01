@@ -1,5 +1,6 @@
 import { EVENT, PPQ } from './Constants.js';
 import { noteFromMidiPitch } from './MidiGenUtil.js';
+import { toArray } from './Util.js';
 
 export default parseParts;
 
@@ -15,29 +16,15 @@ function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
  *  @param {Array} track Array of MIDI events
  *  @returns {Array} Sorted MIDI events
  */
-function permuteImplicitNoteOff(track) {
-  var events = track.slice(),
-    i = 0,
-    event,
-    prevEvent,
-    tmp;
+function permuteImplicitNoteOff(result, event, index, events) {
+  var prevEvent = events[index - 1];
 
-  if (!hasConsecutiveNoteOn(track)) {
-    return events;
-  }
+  if (index > 0 && event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
+    event.deltaTime = prevEvent.deltaTime;
+    prevEvent.deltaTime = 0;
 
-  for (i = 1; i < events.length - 1; i++) {
-    event = events[i];
-    prevEvent = events[i - 1];
-
-    if (event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
-      tmp = event.deltaTime;
-      event.deltaTime = prevEvent.deltaTime;
-      prevEvent.deltaTime = tmp;
-
-      events[i] = prevEvent;
-      events[i - 1] = event;
-    }
+    events[index] = prevEvent;
+    events[index - 1] = event;
   }
 
   return events;
@@ -48,28 +35,18 @@ function permuteImplicitNoteOff(track) {
  *  @param {Array} track Array of MIDI events
  *  @returns {Boolean} true if consecutive 'noteOn' detected
  */
-function hasConsecutiveNoteOn(track) {
-  var currentNote = {},
-    i = 0,
-    event;
+function hasConsecutiveNoteOnForSamePitch(track) {
+  return toArray(track.reduce(groupByNote, {})).some(hasConsecutiveNoteOn);
+}
 
-  while (i < track.length) {
-    event = track[i];
+function groupByNote(result, event) {
+  result[event.noteNumber] = result[event.noteNumber] || [];
+  result[event.noteNumber].push(event);
+  return result;
+}
 
-    if (event.subtype === 'noteOn' && currentNote[event.noteNumber]) {
-      return true;
-    }
-
-    if (event.subtype === 'noteOn') {
-      currentNote[event.noteNumber] = true;
-    } else if (event.subtype === 'noteOff') {
-      currentNote[event.noteNumber] = false;
-    }
-
-    i++;
-  }
-
-  return false;
+function hasConsecutiveNoteOn(noteEvents) {
+  return noteEvents.some((e, index, array) => index > 0 && e.subtype === 'noteOn' && e.subtype === array[index - 1].subtype);
 }
 
 /**
@@ -106,8 +83,8 @@ function parseParts(midiJson, options) {
     trackNotes = [];
     currentTime = 0;
 
-    if (options.duration) {
-      track = permuteImplicitNoteOff(track);
+    if (options.duration && hasConsecutiveNoteOnForSamePitch(track)) {
+      track = track.reduce(permuteImplicitNoteOff);
     }
 
     for (j = 0; j < track.length; j++) {
