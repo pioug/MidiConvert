@@ -1,4 +1,5 @@
 import MidiGen from './MidiGen.js';
+import { flatten } from './Util.js';
 
 export default generate;
 
@@ -72,10 +73,6 @@ function superSort(result, event, index, events) {
 
 function compareTime(a, b) {
   return a.time - b.time;
-}
-
-function flatten(a, b) {
-  return a.concat(b);
 }
 
 function createEvents(note) {

@@ -1,4 +1,7 @@
-export { toArray };
+export {
+  flatten,
+  toArray
+};
 
 function toArray(hash) {
   var arr = [],
@@ -9,4 +12,8 @@ function toArray(hash) {
     }
   }
   return arr;
+}
+
+function flatten(a, b) {
+  return a.concat(b);
 }
