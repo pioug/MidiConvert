@@ -72,11 +72,13 @@ function parseParts(midiJson, options) {
     trackName,
     obj;
 
-  options = options || {};
-  options.PPQ = typeof options.PPQ === 'undefined' ? PPQ : options.PPQ;
-  options.noteName = typeof options.noteName === 'undefined' ? true : options.noteName;
-  options.duration = typeof options.duration === 'undefined' ? true : options.duration;
-  options.velocity = typeof options.velocity === 'undefined' ? true : options.velocity;
+  options = Object.assign({
+    deterministic: false,
+    duration: true,
+    noteName: true,
+    PPQ: PPQ,
+    velocity: true
+  }, options);
 
   for (i = 0; i < midiJson.tracks.length; i++) {
     track = midiJson.tracks[i];
