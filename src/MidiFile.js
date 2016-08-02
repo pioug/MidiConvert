@@ -12,7 +12,6 @@ function MidiFile(data) {
     formatType,
     trackCount,
     ticksPerBeat,
-    header,
     i,
     trackChunk,
     trackStream,
@@ -31,13 +30,7 @@ function MidiFile(data) {
     throw 'Expressing time division in SMTPE frames is not supported yet';
   }
 
-  header = {
-    formatType: formatType,
-    trackCount: trackCount,
-    ticksPerBeat: ticksPerBeat
-  };
-
-  for (i = 0; i < header.trackCount; i++) {
+  for (i = 0; i < trackCount; i++) {
     tracks[i] = [];
     trackChunk = readChunk(stream);
     if (trackChunk.id !== 'MTrk') {
@@ -51,7 +44,11 @@ function MidiFile(data) {
   }
 
   return {
-    header: header,
+    header: {
+      formatType: formatType,
+      trackCount: trackCount,
+      ticksPerBeat: ticksPerBeat
+    },
     tracks: tracks
   };
 
