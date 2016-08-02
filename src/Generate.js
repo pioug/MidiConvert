@@ -15,8 +15,8 @@ function generate(midiJson) {
       track.setTempo(midiJson.transport.bpm);
     }
 
-    if (midiJson.transport._instruments && typeof midiJson.transport._instruments[index] !== 'undefined') {
-      track.setInstrument(midiJson.transport._instruments[index] === 'percussion' ? 9 : index >= 9 ? index + 1 : index, midiJson.transport._instruments[index]);
+    if (midiJson.transport.instruments && typeof midiJson.transport.instruments[index] !== 'undefined') {
+      track.setInstrument(midiJson.transport.instruments[index] === 0 ? 9 : index >= 9 ? index + 1 : index, midiJson.transport.instruments[index] - 1);
     }
 
     if (midiJson.transport.timeSignature) {

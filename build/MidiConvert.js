@@ -1079,8 +1079,8 @@
         track.setTempo(midiJson.transport.bpm);
       }
 
-      if (midiJson.transport._instruments && typeof midiJson.transport._instruments[index] !== 'undefined') {
-        track.setInstrument(midiJson.transport._instruments[index] === 'percussion' ? 9 : index >= 9 ? index + 1 : index, midiJson.transport._instruments[index]);
+      if (midiJson.transport.instruments && typeof midiJson.transport.instruments[index] !== 'undefined') {
+        track.setInstrument(midiJson.transport.instruments[index] === 0 ? 9 : index >= 9 ? index + 1 : index, midiJson.transport.instruments[index] - 1);
       }
 
       if (midiJson.transport.timeSignature) {
@@ -1346,15 +1346,11 @@
    */
   function parseTransport(midiJson) {
     var flattenedEvents = midiJson.tracks.reduce(flatten, []),
-      instruments = midiJson.tracks.reduce(getInstruments, {
-        _instrumentsMap: {},
-        instrumentsMap: {}
-      });
+      instruments = midiJson.tracks.reduce(getInstruments, {});
 
     return {
-      _instruments: toArray(instruments._instrumentsMap),
       bpm: getTempo(flattenedEvents),
-      instruments: toArray(instruments.instrumentsMap),
+      instruments: toArray(instruments),
       timeSignature: getTimeSignature(flattenedEvents)
     };
   }
@@ -1363,8 +1359,7 @@
     var event = track.filter(e => e.subtype === 'programChange').pop();
 
     if (event) {
-      result.instrumentsMap[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
-      result._instrumentsMap[event.channel] = event.channel === 9 ? 'percussion' : event.programNumber;
+      result[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
     }
 
     return result;
