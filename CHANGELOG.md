@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0-beta.1
+
+### What's new
+
+- Remove method aliases of Track class
+- Rewrite former MidiConvert parsing functions in functional programming style
+- Cleanup instruments parsing
+
 ## 3.0.0-beta.0
 
 ### What's new
