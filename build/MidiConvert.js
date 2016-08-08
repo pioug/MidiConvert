@@ -1091,9 +1091,6 @@
         track.setTimeSignature(midiJson.transport.timeSignature[0], midiJson.transport.timeSignature[1]);
       }
 
-      src = src.slice();
-      src.unshift({});
-
       src.map(createEvents)
         .filter(isTruthy)
         .reduce(flatten, [])

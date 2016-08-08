@@ -1,6 +1,6 @@
 {
   "name": "@pioug/MidiConvert",
-  "version": "3.0.0-beta.2",
+  "version": "3.0.0-beta.3",
   "description": "Convert MIDI file to JSON-friendly format",
   "main": "build/MidiConvert.min.js",
   "scripts": {
