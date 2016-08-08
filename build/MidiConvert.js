@@ -1119,7 +1119,8 @@
    */
   function smartSort(result, event, index, events) {
     var prev = result[result.length - 1],
-      next = event;
+      next = event,
+      potentialCanditates;
 
     if (!result.length) {
       next.taken = true;
@@ -1133,17 +1134,15 @@
       return result.concat(next);
     }
 
+    potentialCanditates = events.filter(e => !e.taken && e.time === next.time);
+
     next =
-      events.filter(potentialCanditates).find(e => e.name.includes('Off')) ||
-      events.filter(potentialCanditates).find(e => e.duration > next.duration) ||
+      potentialCanditates.find(e => e.name.includes('Off')) ||
+      potentialCanditates.find(e => e.duration > next.duration) ||
       next;
 
     next.taken = true;
     return result.concat(next);
-
-    function potentialCanditates(e) {
-      return !e.taken && e.time === next.time;
-    }
   }
 
   function compareTime(a, b) {
