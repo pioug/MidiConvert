@@ -1098,7 +1098,7 @@
         .filter(isTruthy)
         .reduce(flatten, [])
         .sort(compareTime)
-        .reduce(superSort, [])
+        .reduce(smartSort, [])
         .reduce(convertToDeltaTime, [])
         .reduce(insertEvents, track);
     }
@@ -1113,7 +1113,14 @@
     return track;
   }
 
-  function superSort(result, event, index, events) {
+  /*
+   * Sorting only by time is not enough to support cases
+   * where notes and/or on-off events are concurrent
+   * Example of prioritisation when events are simultaneous:
+   * - Prefer 'Off' event over 'On' event to avoid consecutive 'On'
+   * - Prefer event that will last longer
+   */
+  function smartSort(result, event, index, events) {
     var prev = result[result.length - 1],
       next = event;
 
