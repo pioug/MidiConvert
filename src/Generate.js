@@ -1,5 +1,5 @@
 import MidiGen from './MidiGen.js';
-import { flatten } from './Util.js';
+import { flatten, isTruthy } from './Util.js';
 
 export default generate;
 
@@ -23,7 +23,11 @@ function generate(midiJson) {
       track.setTimeSignature(midiJson.transport.timeSignature[0], midiJson.transport.timeSignature[1]);
     }
 
+    src = src.slice();
+    src.unshift({});
+
     src.map(createEvents)
+      .filter(isTruthy)
       .reduce(flatten, [])
       .sort(compareTime)
       .reduce(superSort, [])
@@ -43,10 +47,9 @@ function insertEvents(track, event) {
 
 function superSort(result, event, index, events) {
   var prev = result[result.length - 1],
-    next;
+    next = event;
 
   if (!result.length) {
-    next = events[0];
     next.taken = true;
     return [next];
   }

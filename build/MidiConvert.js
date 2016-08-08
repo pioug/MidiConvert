@@ -1067,6 +1067,10 @@
     return a.concat(b);
   }
 
+  function isTruthy(a) {
+    return !!a;
+  }
+
   function generate(midiJson) {
     var destination = new MidiGen.File();
     midiJson.parts.forEach(copyTrack);
@@ -1087,7 +1091,11 @@
         track.setTimeSignature(midiJson.transport.timeSignature[0], midiJson.transport.timeSignature[1]);
       }
 
+      src = src.slice();
+      src.unshift({});
+
       src.map(createEvents)
+        .filter(isTruthy)
         .reduce(flatten, [])
         .sort(compareTime)
         .reduce(superSort, [])
@@ -1107,10 +1115,9 @@
 
   function superSort(result, event, index, events) {
     var prev = result[result.length - 1],
-      next;
+      next = event;
 
     if (!result.length) {
-      next = events[0];
       next.taken = true;
       return [next];
     }

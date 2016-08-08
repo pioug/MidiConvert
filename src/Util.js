@@ -1,5 +1,6 @@
 export {
   flatten,
+  isTruthy,
   toArray
 };
 
@@ -16,4 +17,8 @@ function toArray(hash) {
 
 function flatten(a, b) {
   return a.concat(b);
+}
+
+function isTruthy(a) {
+  return !!a;
 }
