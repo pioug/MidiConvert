@@ -1,6 +1,6 @@
 {
   "name": "@pioug/MidiConvert",
-  "version": "2.1.1",
+  "version": "3.0.0-beta.2",
   "description": "Convert MIDI file to JSON-friendly format",
   "main": "build/MidiConvert.min.js",
   "scripts": {
@@ -20,12 +20,12 @@
     "url": "https://github.com/pioug/MidiConvert/issues"
   },
   "devDependencies": {
-    "ava": "0.15.2",
-    "coveralls": "2.11.9",
-    "eslint": "2.12.0",
-    "eslint-config-bandlab": "2.9.0",
-    "google-closure-compiler": "20160517.1.0",
-    "nyc": "6.6.1",
-    "rollup": "0.31.2"
+    "ava": "0.16.0",
+    "coveralls": "2.11.12",
+    "eslint": "3.2.2",
+    "eslint-config-bandlab": "3.2.0",
+    "google-closure-compiler": "20160713.2.0",
+    "nyc": "7.1.0",
+    "rollup": "0.34.7"
   }
 }

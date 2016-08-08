@@ -71,6 +71,72 @@
     }
   }
 
+  var EVENT = {
+      NOTE_OFF: 0x80,
+      NOTE_ON: 0x90,
+      AFTER_TOUCH: 0xA0,
+      CONTROL_CHANGE: 0xB0,
+      CONTROLLER: {
+        DAMPER_PEDAL: 0x40
+      },
+      PROGRAM_CHANGE: 0xC0,
+      CHANNEL_AFTERTOUCH: 0xD0,
+      PITCH_BEND: 0xE0
+    };
+  var META_EVENT = {
+      SEQUENCE_NUMBER: 0x00,
+      TEXT: 0x01,
+      COPYRIGHT_NOTICE: 0x02,
+      TRACK_NAME: 0x03,
+      INSTRUMENT_NAME: 0x04,
+      LYRICS: 0x05,
+      MARKER: 0x06,
+      CUE_POINT: 0x07,
+      PROGRAM_NAME: 0x08,
+      DEVICE_NAME: 0x09,
+      MIDI_CHANNEL_PREFIX: 0x20,
+      MIDI_PORT: 0x21,
+      END_OF_TRACK: 0x2f,
+      SET_TEMPO: 0x51,
+      SMPTE_OFFSET: 0x54,
+      TIME_SIGNATURE: 0x58,
+      KEY_SIGNATURE: 0x59,
+      SEQUENCER_SPECIFIC: 0x7f
+    };
+  var PPQ = 128;
+  var THIRTY_SECOND_NOTES_PER_QUARTER_NOTE = 8;
+  var TICKS_PER_CLICK = 24;
+  var midiFlattenedNotes = {
+      'A#': 'Bb',
+      'C#': 'Db',
+      'D#': 'Eb',
+      'F#': 'Gb',
+      'G#': 'Ab'
+    };
+  var midiLetterPitches = {
+      A: 21,
+      B: 23,
+      C: 12,
+      D: 14,
+      E: 16,
+      F: 17,
+      G: 19
+    };
+  var midiPitchesLetter = {
+      12: 'C',
+      13: 'C#',
+      14: 'D',
+      15: 'D#',
+      16: 'E',
+      17: 'F',
+      18: 'F#',
+      19: 'G',
+      20: 'G#',
+      21: 'A',
+      22: 'A#',
+      23: 'B'
+    };
+
   function MidiFile(data) {
     var lastEventTypeByte,
       stream = Stream(data),
@@ -80,7 +146,6 @@
       formatType,
       trackCount,
       ticksPerBeat,
-      header,
       i,
       trackChunk,
       trackStream,
@@ -99,13 +164,7 @@
       throw 'Expressing time division in SMTPE frames is not supported yet';
     }
 
-    header = {
-      formatType: formatType,
-      trackCount: trackCount,
-      ticksPerBeat: ticksPerBeat
-    };
-
-    for (i = 0; i < header.trackCount; i++) {
+    for (i = 0; i < trackCount; i++) {
       tracks[i] = [];
       trackChunk = readChunk(stream);
       if (trackChunk.id !== 'MTrk') {
@@ -119,7 +178,11 @@
     }
 
     return {
-      header: header,
+      header: {
+        formatType: formatType,
+        trackCount: trackCount,
+        ticksPerBeat: ticksPerBeat
+      },
       tracks: tracks
     };
 
@@ -150,55 +213,55 @@
           subtypeByte = stream.readInt8();
           length = stream.readVarInt();
           switch (subtypeByte) {
-            case 0x00:
+            case META_EVENT.SEQUENCE_NUMMBER:
               event.subtype = 'sequenceNumber';
               if (length !== 2) {
                 throw 'Expected length for sequenceNumber event is 2, got ' + length;
               }
               event.number = stream.readInt16();
               return event;
-            case 0x01:
+            case META_EVENT.TEXT:
               event.subtype = 'text';
               event.text = stream.read(length);
               return event;
-            case 0x02:
+            case META_EVENT.COPYRIGHT_NOTICE:
               event.subtype = 'copyrightNotice';
               event.text = stream.read(length);
               return event;
-            case 0x03:
+            case META_EVENT.TRACK_NAME:
               event.subtype = 'trackName';
               event.text = stream.read(length);
               return event;
-            case 0x04:
+            case META_EVENT.INSTRUMENT_NAME:
               event.subtype = 'instrumentName';
               event.text = stream.read(length);
               return event;
-            case 0x05:
+            case META_EVENT.LYRICS:
               event.subtype = 'lyrics';
               event.text = stream.read(length);
               return event;
-            case 0x06:
+            case META_EVENT.MARKER:
               event.subtype = 'marker';
               event.text = stream.read(length);
               return event;
-            case 0x07:
+            case META_EVENT.CUE_POINT:
               event.subtype = 'cuePoint';
               event.text = stream.read(length);
               return event;
-            case 0x20:
+            case META_EVENT.MIDI_CHANNEL_PREFIX:
               event.subtype = 'midiChannelPrefix';
               if (length !== 1) {
                 throw 'Expected length for midiChannelPrefix event is 1, got ' + length;
               }
               event.channel = stream.readInt8();
               return event;
-            case 0x2f:
+            case META_EVENT.END_OF_TRACK:
               event.subtype = 'endOfTrack';
               if (length !== 0) {
                 throw 'Expected length for endOfTrack event is 0, got ' + length;
               }
               return event;
-            case 0x51:
+            case META_EVENT.SET_TEMPO:
               event.subtype = 'setTempo';
               if (length !== 3) {
                 throw 'Expected length for setTempo event is 3, got ' + length;
@@ -209,7 +272,7 @@
                 + stream.readInt8()
               );
               return event;
-            case 0x54:
+            case META_EVENT.SMPTE_OFFSET:
               event.subtype = 'smpteOffset';
               if (length !== 5) {
                 throw 'Expected length for smpteOffset event is 5, got ' + length;
@@ -224,7 +287,7 @@
               event.frame = stream.readInt8();
               event.subframe = stream.readInt8();
               return event;
-            case 0x58:
+            case META_EVENT.TIME_SIGNATURE:
               event.subtype = 'timeSignature';
               if (length !== 4) {
                 throw 'Expected length for timeSignature event is 4, got ' + length;
@@ -234,7 +297,7 @@
               event.metronome = stream.readInt8();
               event.thirtyseconds = stream.readInt8();
               return event;
-            case 0x59:
+            case META_EVENT.KEY_SIGNATURE:
               event.subtype = 'keySignature';
               if (length !== 2) {
                 throw 'Expected length for keySignature event is 2, got ' + length;
@@ -242,7 +305,7 @@
               event.key = stream.readInt8(true);
               event.scale = stream.readInt8();
               return event;
-            case 0x7f:
+            case META_EVENT.SEQUENCER_SPECIFIC:
               event.subtype = 'sequencerSpecific';
               event.data = stream.read(length);
               return event;
@@ -277,39 +340,39 @@
           lastEventTypeByte = eventTypeByte;
         }
 
-        eventType = eventTypeByte >> 4;
+        eventType = eventTypeByte & 0xf0;
         event.channel = eventTypeByte & 0x0f;
         event.type = 'channel';
         switch (eventType) {
-          case 0x08:
+          case EVENT.NOTE_OFF:
             event.subtype = 'noteOff';
             event.noteNumber = param1;
             event.velocity = stream.readInt8();
             return event;
-          case 0x09:
+          case EVENT.NOTE_ON:
             event.noteNumber = param1;
             event.velocity = stream.readInt8();
             event.subtype = event.velocity === 0 ? 'noteOff' : 'noteOn';
             return event;
-          case 0x0a:
+          case EVENT.AFTER_TOUCH:
             event.subtype = 'noteAftertouch';
             event.noteNumber = param1;
             event.amount = stream.readInt8();
             return event;
-          case 0x0b:
-            event.subtype = 'controller';
+          case EVENT.CONTROL_CHANGE:
+            event.subtype = 'controlChange';
             event.controllerType = param1;
             event.value = stream.readInt8();
             return event;
-          case 0x0c:
+          case EVENT.PROGRAM_CHANGE:
             event.subtype = 'programChange';
             event.programNumber = param1;
             return event;
-          case 0x0d:
+          case EVENT.CHANNEL_AFTERTOUCH:
             event.subtype = 'channelAftertouch';
             event.amount = param1;
             return event;
-          case 0x0e:
+          case EVENT.PITCH_BEND:
             event.subtype = 'pitchBend';
             event.value = param1 + (stream.readInt8() << 7);
             return event;
@@ -321,66 +384,825 @@
   }
 
   /**
-   *  Parse tempo and time signature from the midiJson
-   *  @param {Object} midiJson
-   *  @return {Object}
+   * Convert a symbolic note name (e.g. 'c4') to a numeric MIDI pitch (e.g.
+   * 60, middle C).
+   *
+   * @param {string} n - The symbolic note name to parse.
+   * @returns {number} The MIDI pitch that corresponds to the symbolic note
+   * name.
    */
-  function parseTransport(midiJson) {
-    var ret = {
-        instruments: []
-      },
-      instrumentsMap = {},
-      track,
-      i,
-      j,
-      datum;
+  function midiPitchFromNote(n) {
+    var matches = /([A-G])(#+|b+)?([0-9]+)$/i.exec(n),
+      note = matches[1].toUpperCase(),
+      accidental = matches[2] || '',
+      octave = parseInt(matches[3], 10);
 
-    for (i = 0; i < midiJson.tracks.length; i++) {
-      track = midiJson.tracks[i];
-      for (j = 0; j < track.length; j++) {
-        datum = track[j];
-        if (datum.type === 'meta') {
-          if (datum.subtype === 'timeSignature') {
-            ret.timeSignature = [datum.numerator, datum.denominator];
-          } else if (datum.subtype === 'setTempo') {
-            ret.bpm = 60000000 / datum.microsecondsPerBeat;
-          }
-        } else if (datum.type === 'channel') {
-          if (datum.subtype === 'programChange') {
-            instrumentsMap[datum.channel] = datum.channel === 9 ? 0 : datum.programNumber + 1;
-          }
-        }
-      }
+    return (12 * octave) + midiLetterPitches[note] + (accidental.substr(0, 1) === '#' ? 1 : -1) * accidental.length;
+  }
+
+  /**
+   * Ensure that the given argument is converted to a MIDI pitch. Note that
+   * it may already be one (including a purely numeric string).
+   *
+   * @param {string|number} p - The pitch to convert.
+   * @returns {number} The resulting numeric MIDI pitch.
+   */
+  function ensureMidiPitch(p) {
+    if (typeof p === 'number' || !/[^0-9]/.test(p)) {
+      // numeric pitch
+      return parseInt(p, 10);
+    } else {
+      // assume it's a note name
+      return midiPitchFromNote(p);
+    }
+  }
+
+  /**
+   * Convert a numeric MIDI pitch value (e.g. 60) to a symbolic note name
+   * (e.g. 'c4').
+   *
+   * @param {number} n - The numeric MIDI pitch value to convert.
+   * @param {boolean} [returnFlattened=false] - Whether to prefer flattened
+   * notes to sharpened ones. Optional, default false.
+   * @returns {string} The resulting symbolic note name.
+   */
+  function noteFromMidiPitch(n, returnFlattened) {
+    var octave = 0,
+      noteNum = n,
+      noteName;
+
+    returnFlattened = returnFlattened || false;
+
+    if (n > 23) {
+      // noteNum is on octave 1 or more
+      octave = Math.floor(n / 12) - 1;
+      // subtract number of octaves from noteNum
+      noteNum = n - octave * 12;
     }
 
-    for (track in instrumentsMap) {
-      if (instrumentsMap.hasOwnProperty(track)) {
-        ret.instruments.push(instrumentsMap[track]);
-      }
+    // get note name (c#, d, f# etc)
+    noteName = midiPitchesLetter[noteNum];
+    // Use flattened notes if requested (e.g. f# should be output as gb)
+    if (returnFlattened && noteName.indexOf('#') > 0) {
+      noteName = midiFlattenedNotes[noteName];
     }
+    return noteName + octave;
+  }
 
+  /**
+   * Convert beats per minute (BPM) to microseconds per quarter note (MPQN).
+   *
+   * @param {number} bpm - A number in beats per minute.
+   * @returns {number} The number of microseconds per quarter note.
+   */
+  function mpqnFromBpm(bpm) {
+    var mpqn = Math.floor(60000000 / bpm),
+      ret = [];
+
+    do {
+      ret.unshift(mpqn & 0xFF);
+      mpqn >>= 8;
+    } while (mpqn);
+    while (ret.length < 3) {
+      ret.push(0);
+    }
     return ret;
   }
 
-  var CONTROL_CHANGE_SUSTAIN_PEDAL = 64;
+  /**
+   * Convert microseconds per quarter note (MPQN) to beats per minute (BPM).
+   *
+   * @param {number} mpqn - The number of microseconds per quarter note.
+   * @returns {number} A number in beats per minute.
+   */
+  function bpmFromMpqn(mpqn) {
+    return Math.floor(60000000 / mpqn);
+  }
 
   /**
-   *  Convert a MIDI number to scientific pitch notation
-   *  @param {Number} midi The MIDI note number
-   *  @returns {String} The note in scientific pitch notation
+   * Converts an array of bytes to a string of hexadecimal characters. Prepares
+   * it to be converted into a base64 string.
+   *
+   * @param {Array} byteArray - Array of bytes to be converted.
+   * @returns {string} Hexadecimal string, e.g. '097B8A'.
    */
-  function midiToNote(midi) {
-    var scaleIndexToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
-      octave = Math.floor(midi / 12) - 1,
-      note = midi % 12;
-    return scaleIndexToNote[note] + octave;
+  function codes2Str(byteArray) {
+    return String.fromCharCode.apply(null, byteArray);
+  }
+
+  /**
+   * Converts a string of hexadecimal values to an array of bytes. It can also
+   * add remaining '0' nibbles in order to have enough bytes in the array as the
+   * `finalBytes` parameter.
+   *
+   * @param {string} str - string of hexadecimal values e.g. '097B8A'
+   * @param {number} [finalBytes] - Optional. The desired number of bytes
+   * (not nibbles) that the returned array should contain.
+   * @returns {Array} An array of nibbles.
+   */
+  function str2Bytes(str, finalBytes) {
+    if (finalBytes) {
+      while ((str.length / 2) < finalBytes) { str = '0' + str; }
+    }
+
+    var bytes = [],
+      chars,
+      i;
+
+    for (i = str.length - 1; i >= 0; i = i - 2) {
+      chars = i === 0 ? str[i] : str[i - 1] + str[i];
+      bytes.unshift(parseInt(chars, 16));
+    }
+
+    return bytes;
+  }
+
+  /**
+   * Translates number of ticks to MIDI timestamp format, returning an array
+   * of bytes with the time values. MIDI has a very particular way to express
+   * time; take a good look at the spec before ever touching this function.
+   *
+   * @param {number} ticks - Number of ticks to be translated.
+   * @returns {number} Array of bytes that form the MIDI time value.
+   */
+  function translateTickTime(ticks) {
+    var buffer = ticks & 0x7F,
+      cond = true,
+      bList = [];
+
+    ticks = ticks >> 7;
+    while (ticks) {
+      buffer <<= 8;
+      buffer |= ((ticks & 0x7F) | 0x80);
+      ticks = ticks >> 7;
+    }
+
+    while (cond) {
+      bList.push(buffer & 0xff);
+
+      if (buffer & 0x80) {
+        buffer >>= 8;
+      } else {
+        cond = false;
+      }
+    }
+    return bList;
+  }
+
+  /**
+   * Construct a meta event.
+   *
+   * Parameters include:
+   *  - time [optional number] - Ticks since previous event.
+   *  - type [required number] - Type of event.
+   *  - data [optional array|string] - Event data.
+   */
+  var MetaEvent = function(params) {
+    if (!this) return new MetaEvent(params);
+    this.setTime(params.time);
+    this.setType(params.type);
+    this.setData(params.data);
+  };
+
+  /**
+   * Set the time for the event in ticks since the previous event.
+   *
+   * @param {number} ticks - The number of ticks since the previous event. May
+   * be zero.
+   */
+  MetaEvent.prototype.setTime = function(ticks) {
+    this.time = translateTickTime(ticks || 0);
+  };
+
+  /**
+   * Set the type of the event. Must be one of the event codes on MetaEvent.
+   *
+   * @param {number} t - Event type.
+   */
+  MetaEvent.prototype.setType = function(t) {
+    this.type = t;
+  };
+
+  /**
+   * Set the data associated with the event. May be a string or array of byte
+   * values.
+   *
+   * @param {string|Array} d - Event data.
+   */
+  MetaEvent.prototype.setData = function(d) {
+    this.data = d;
+  };
+
+  /**
+   * Serialize the event to an array of bytes.
+   *
+   * @returns {Array} The array of serialized bytes.
+   */
+  MetaEvent.prototype.toBytes = function() {
+    if (!this.type) {
+      throw new Error('Type for meta-event not specified.');
+    }
+
+    var byteArray = [],
+      dataBytes;
+    byteArray.push.apply(byteArray, this.time);
+    byteArray.push(0xFF, this.type);
+
+    // If data is an array, we assume that it contains several bytes. We
+    // append them to byteArray.
+    if (Array.isArray(this.data)) {
+      byteArray.push(this.data.length);
+      byteArray.push.apply(byteArray, this.data);
+    } else if (typeof this.data === 'number') {
+      byteArray.push(1, this.data);
+    } else if (this.data !== null && typeof this.data !== 'undefined') {
+      // assume string; may be a bad assumption
+      byteArray.push(this.data.length);
+      dataBytes = this.data.split('').map(function(x) {
+        return x.charCodeAt(0);
+      });
+      byteArray.push.apply(byteArray, dataBytes);
+    } else {
+      byteArray.push(0);
+    }
+
+    return byteArray;
+  };
+
+  /**
+   * Construct a MIDI event.
+   *
+   * Parameters include:
+   *  - time [optional number] - Ticks since previous event.
+   *  - type [required number] - Type of event.
+   *  - channel [required number] - Channel for the event.
+   *  - param1 [required number] - First event parameter.
+   *  - param2 [optional number] - Second event parameter.
+   */
+  var MidiEvent = function(params) {
+    if (!this) return new MidiEvent(params);
+    if (params &&
+        (params.type !== null || typeof params.type !== 'undefined') &&
+        (params.channel !== null || typeof params.channel !== 'undefined') &&
+        (params.param1 !== null || typeof params.param1 !== 'undefined')) {
+      this.setTime(params.time);
+      this.setType(params.type);
+      this.setChannel(params.channel);
+      this.setParam1(params.param1);
+      this.setParam2(params.param2);
+    }
+  };
+
+  /**
+   * Set the time for the event in ticks since the previous event.
+   *
+   * @param {number} ticks - The number of ticks since the previous event. May
+   * be zero.
+   */
+  MidiEvent.prototype.setTime = function(ticks) {
+    this.time = translateTickTime(ticks || 0);
+  };
+
+  /**
+   * Set the type of the event. Must be one of the event codes on MidiEvent.
+   *
+   * @param {number} type - Event type.
+   */
+  MidiEvent.prototype.setType = function(type) {
+    if (type < EVENT.NOTE_OFF || type > EVENT.PITCH_BEND) {
+      throw new Error('Trying to set an unknown event: ' + type);
+    }
+
+    this.type = type;
+  };
+
+  /**
+   * Set the channel for the event. Must be between 0 and 15, inclusive.
+   *
+   * @param {number} channel - The event channel.
+   */
+  MidiEvent.prototype.setChannel = function(channel) {
+    if (channel < 0 || channel > 15) {
+      throw new Error('Channel is out of bounds.');
+    }
+
+    this.channel = channel;
+  };
+
+  /**
+   * Set the first parameter for the event. Must be between 0 and 255,
+   * inclusive.
+   *
+   * @param {number} p - The first event parameter value.
+   */
+  MidiEvent.prototype.setParam1 = function(p) {
+    this.param1 = p;
+  };
+
+  /**
+   * Set the second parameter for the event. Must be between 0 and 255,
+   * inclusive.
+   *
+   * @param {number} p - The second event parameter value.
+   */
+  MidiEvent.prototype.setParam2 = function(p) {
+    this.param2 = p;
+  };
+
+  /**
+   * Serialize the event to an array of bytes.
+   *
+   * @returns {Array} The array of serialized bytes.
+   */
+  MidiEvent.prototype.toBytes = function() {
+    var byteArray = [],
+      typeChannelByte = this.type | (this.channel & 0xF);
+
+    byteArray.push.apply(byteArray, this.time);
+    byteArray.push(typeChannelByte);
+    byteArray.push(this.param1);
+
+    // Some events don't have a second parameter
+    if (typeof this.param2 !== 'undefined' && this.param2 !== null) {
+      byteArray.push(this.param2);
+    }
+    return byteArray;
+  };
+
+  var DEFAULT_VOLUME = 90;
+  var Track;
+  /**
+   * Construct a MIDI track.
+   *
+   * Parameters include:
+   *  - events [optional array] - Array of events for the track.
+   */
+  Track = function(config) {
+    if (!this) return new Track(config);
+    var c = config || {};
+    this.events = c.events || [];
+  };
+
+  Track.START_BYTES = [0x4d, 0x54, 0x72, 0x6b];
+  Track.END_BYTES = [0x00, 0xFF, 0x2F, 0x00];
+
+  /**
+   * Add an event to the track.
+   *
+   * @param {MidiEvent|MetaEvent} event - The event to add.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.addEvent = function(event) {
+    this.events.push(event);
+    return this;
+  };
+
+  /**
+   * Add a note-on event to the track.
+   *
+   * @param {number} channel - The channel to add the event to.
+   * @param {number|string} pitch - The pitch of the note, either numeric or
+   * symbolic.
+   * @param {number} [time=0] - The number of ticks since the previous event,
+   * defaults to 0.
+   * @param {number} [velocity=90] - The volume for the note, defaults to
+   * DEFAULT_VOLUME.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.addNoteOn = function(channel, pitch, time, velocity) {
+    this.events.push(new MidiEvent({
+      type: EVENT.NOTE_ON,
+      channel: channel,
+      param1: ensureMidiPitch(pitch),
+      param2: velocity || DEFAULT_VOLUME,
+      time: time || 0
+    }));
+    return this;
+  };
+
+  /**
+   * Add a note-off event to the track.
+   *
+   * @param {number} channel - The channel to add the event to.
+   * @param {number|string} pitch - The pitch of the note, either numeric or
+   * symbolic.
+   * @param {number} [time=0] - The number of ticks since the previous event,
+   * defaults to 0.
+   * @param {number} [velocity=90] - The velocity the note was released,
+   * defaults to DEFAULT_VOLUME.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.addNoteOff = function(channel, pitch, time, velocity) {
+    this.events.push(new MidiEvent({
+      type: EVENT.NOTE_OFF,
+      channel: channel,
+      param1: ensureMidiPitch(pitch),
+      param2: velocity || DEFAULT_VOLUME,
+      time: time || 0
+    }));
+    return this;
+  };
+
+  Track.prototype.addSustainOn = function(channel, time) {
+    this.events.push(new MidiEvent({
+      type: EVENT.CONTROL_CHANGE,
+      channel: channel,
+      param1: EVENT.CONTROLLER.DAMPER_PEDAL,
+      param2: 127,
+      time: time || 0
+    }));
+    return this;
+  };
+
+  Track.prototype.addSustainOff = function(channel, time) {
+    this.events.push(new MidiEvent({
+      type: EVENT.CONTROL_CHANGE,
+      channel: channel,
+      param1: EVENT.CONTROLLER.DAMPER_PEDAL,
+      param2: 0,
+      time: time || 0
+    }));
+    return this;
+  };
+
+  /**
+   * Add a note-on and -off event to the track.
+   *
+   * @param {number} channel - The channel to add the event to.
+   * @param {number|string} pitch - The pitch of the note, either numeric or
+   * symbolic.
+   * @param {number} dur - The duration of the note, in ticks.
+   * @param {number} [time=0] - The number of ticks since the previous event,
+   * defaults to 0.
+   * @param {number} [velocity=90] - The velocity the note was released,
+   * defaults to DEFAULT_VOLUME.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.addNote = function(channel, pitch, dur, time, velocity) {
+    this.noteOn(channel, pitch, time, velocity);
+    if (dur) {
+      this.noteOff(channel, pitch, dur, velocity);
+    }
+    return this;
+  };
+
+  /**
+   * Add a note-on and -off event to the track for each pitch in an array of pitches.
+   *
+   * @param {number} channel - The channel to add the event to.
+   * @param {array} chord - An array of pitches, either numeric or
+   * symbolic.
+   * @param {number} dur - The duration of the chord, in ticks.
+   * @param {number} [velocity=90] - The velocity of the chord,
+   * defaults to DEFAULT_VOLUME.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.addChord = function(channel, chord, dur, velocity) {
+    if (!Array.isArray(chord) && !chord.length) {
+      throw new Error('Chord must be an array of pitches');
+    }
+    chord.forEach(function(note) {
+      this.noteOn(channel, note, 0, velocity);
+    }, this);
+    chord.forEach(function(note, index) {
+      if (index === 0) {
+        this.noteOff(channel, note, dur);
+      } else {
+        this.noteOff(channel, note);
+      }
+    }, this);
+    return this;
+  };
+
+  /**
+   * Set instrument for the track.
+   *
+   * @param {number} channel - The channel to set the instrument on.
+   * @param {number} instrument - The instrument to set it to.
+   * @param {number} [time=0] - The number of ticks since the previous event,
+   * defaults to 0.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.setInstrument = function(channel, instrument, time) {
+    this.events.push(new MidiEvent({
+      type: EVENT.PROGRAM_CHANGE,
+      channel: channel,
+      param1: instrument,
+      time: time || 0
+    }));
+    return this;
+  };
+
+  Track.prototype.setTimeSignature = function(numerator, denominator, time) {
+    this.events.push(new MetaEvent({
+      type: META_EVENT.TIME_SIGNATURE,
+      data: [
+        numerator,
+        Math.log2(denominator),
+        TICKS_PER_CLICK,
+        THIRTY_SECOND_NOTES_PER_QUARTER_NOTE
+      ],
+      time: time || 0
+    }));
+    return this;
+  };
+
+  /**
+   * Set the tempo for the track.
+   *
+   * @param {number} bpm - The new number of beats per minute.
+   * @param {number} [time=0] - The number of ticks since the previous event,
+   * defaults to 0.
+   * @returns {Track} The current track.
+   */
+  Track.prototype.setTempo = function(bpm, time) {
+    this.events.push(new MetaEvent({
+      type: META_EVENT.SET_TEMPO,
+      data: mpqnFromBpm(bpm),
+      time: time || 0
+    }));
+    return this;
+  };
+
+  /**
+   * Serialize the track to an array of bytes.
+   *
+   * @returns {Array} The array of serialized bytes.
+   */
+  Track.prototype.toBytes = function() {
+    var trackLength = 0,
+      eventBytes = [],
+      lengthBytes,
+      startBytes = Track.START_BYTES,
+      endBytes = Track.END_BYTES;
+
+    function addEventBytes(event) {
+      var bytes = event.toBytes();
+      trackLength += bytes.length;
+      eventBytes.push.apply(eventBytes, bytes);
+    }
+
+    this.events.forEach(addEventBytes);
+
+    // Add the end-of-track bytes to the sum of bytes for the track, since
+    // they are counted (unlike the start-of-track ones).
+    trackLength += endBytes.length;
+
+    // Makes sure that track length will fill up 4 bytes with 0s in case
+    // the length is less than that (the usual case).
+    lengthBytes = str2Bytes(trackLength.toString(16), 4);
+
+    return startBytes.concat(lengthBytes, eventBytes, endBytes);
+  };
+
+  var Track$1 = Track;
+
+  /**
+   * Construct a file object.
+   *
+   * Parameters include:
+   *  - ticks [optional number] - Number of ticks per beat, defaults to 128.
+   *    Must be 1-32767.
+   *  - tracks [optional array] - Track data.
+   */
+  var File = function(config) {
+    if (!this) return new File(config);
+
+    var c = config || {};
+    if (c.ticks) {
+      if (typeof c.ticks !== 'number') {
+        throw new Error('Ticks per beat must be a number!');
+      }
+      if (c.ticks <= 0 || c.ticks >= (1 << 15) || c.ticks % 1 !== 0) {
+        throw new Error('Ticks per beat must be an integer between 1 and 32767!');
+      }
+    }
+
+    this.ticks = c.ticks || PPQ;
+    this.tracks = c.tracks || [];
+  };
+
+  File.HDR_CHUNKID = 'MThd'; // File magic cookie
+  File.HDR_CHUNK_SIZE = '\x00\x00\x00\x06'; // Header length for SMF
+  File.HDR_TYPE0 = '\x00\x00'; // Midi Type 0 id
+  File.HDR_TYPE1 = '\x00\x01'; // Midi Type 1 id
+
+  /**
+   * Add a track to the file.
+   *
+   * @param {Track} track - The track to add.
+   */
+  File.prototype.addTrack = function(track) {
+    if (track) {
+      this.tracks.push(track);
+      return this;
+    } else {
+      track = new Track$1();
+      this.tracks.push(track);
+      return track;
+    }
+  };
+
+  /**
+   * Serialize the MIDI file to an array of bytes.
+   *
+   * @returns {Array} The array of serialized bytes.
+   */
+  File.prototype.toBytes = function() {
+    var trackCount = this.tracks.length.toString(16),
+      bytes = File.HDR_CHUNKID + File.HDR_CHUNK_SIZE; // prepare the file header
+
+    // set Midi type based on number of tracks
+    if (parseInt(trackCount, 16) > 1) {
+      bytes += File.HDR_TYPE1;
+    } else {
+      bytes += File.HDR_TYPE0;
+    }
+
+    // add the number of tracks (2 bytes)
+    bytes += codes2Str(str2Bytes(trackCount, 2));
+    // add the number of ticks per beat (currently hardcoded)
+    bytes += String.fromCharCode((this.ticks / 256), this.ticks % 256);
+
+    // iterate over the tracks, converting to bytes too
+    this.tracks.forEach(function(track) {
+      bytes += codes2Str(track.toBytes());
+    });
+
+    return bytes;
+  };
+
+  var MidiGen = {
+    File,
+    Track: Track$1,
+    MidiEvent,
+    MetaEvent,
+    Util: {
+      midiLetterPitches,
+      midiPitchesLetter,
+      midiFlattenedNotes,
+      midiPitchFromNote,
+      ensureMidiPitch,
+      noteFromMidiPitch,
+      mpqnFromBpm,
+      bpmFromMpqn,
+      codes2Str,
+      str2Bytes,
+      translateTickTime
+    }
+  };
+
+  function toArray(hash) {
+    var arr = [],
+      key;
+    for (key in hash) {
+      if (hash.hasOwnProperty(key)) {
+        arr.push(hash[key]);
+      }
+    }
+    return arr;
+  }
+
+  function flatten(a, b) {
+    return a.concat(b);
+  }
+
+  function isTruthy(a) {
+    return !!a;
+  }
+
+  function generate(midiJson) {
+    var destination = new MidiGen.File();
+    midiJson.parts.forEach(copyTrack);
+    return destination.toBytes();
+
+    function copyTrack(src, index) {
+      var track = destination.addTrack();
+
+      if (midiJson.transport.bpm) {
+        track.setTempo(midiJson.transport.bpm);
+      }
+
+      if (midiJson.transport.instruments && typeof midiJson.transport.instruments[index] !== 'undefined') {
+        track.setInstrument(midiJson.transport.instruments[index] === 0 ? 9 : index >= 9 ? index + 1 : index, midiJson.transport.instruments[index] - 1);
+      }
+
+      if (midiJson.transport.timeSignature) {
+        track.setTimeSignature(midiJson.transport.timeSignature[0], midiJson.transport.timeSignature[1]);
+      }
+
+      src = src.slice();
+      src.unshift({});
+
+      src.map(createEvents)
+        .filter(isTruthy)
+        .reduce(flatten, [])
+        .sort(compareTime)
+        .reduce(smartSort, [])
+        .reduce(convertToDeltaTime, [])
+        .reduce(insertEvents, track);
+    }
+  }
+
+  function insertEvents(track, event) {
+    if (event.name.includes('Note')) {
+      track['add' + event.name](0, event.midiNote, event.deltaTime, event.velocity * 127);
+    } else if (event.name.includes('Sustain')) {
+      track['add' + event.name](0, event.deltaTime);
+    }
+    return track;
+  }
+
+  /*
+   * Sorting only by time is not enough to support cases
+   * where notes and/or on-off events are concurrent
+   * Example of prioritisation when events are simultaneous:
+   * - Prefer 'Off' event over 'On' event to avoid consecutive 'On'
+   * - Prefer event that will last longer
+   */
+  function smartSort(result, event, index, events) {
+    var prev = result[result.length - 1],
+      next = event;
+
+    if (!result.length) {
+      next.taken = true;
+      return [next];
+    }
+
+    next = events.find(e => !e.taken && e.time >= prev.time);
+
+    if (!next.duration) {
+      next.taken = true;
+      return result.concat(next);
+    }
+
+    next =
+      events.filter(potentialCanditates).find(e => e.name.includes('Off')) ||
+      events.filter(potentialCanditates).find(e => e.duration > next.duration) ||
+      next;
+
+    next.taken = true;
+    return result.concat(next);
+
+    function potentialCanditates(e) {
+      return !e.taken && e.time === next.time;
+    }
+  }
+
+  function compareTime(a, b) {
+    return a.time - b.time;
+  }
+
+  function createEvents(note) {
+    if (typeof note.midiNote !== 'undefined') {
+      return [{
+        duration: parseInt(note.duration),
+        midiNote: note.midiNote,
+        name: 'NoteOn',
+        time: parseInt(note.time),
+        velocity: note.velocity
+      }, {
+        duration: parseInt(note.duration),
+        midiNote: note.midiNote,
+        name: 'NoteOff',
+        time: parseInt(note.time) + parseInt(note.duration),
+        velocity: note.velocity
+      }];
+    } else if (note.eventName === 'sustain') {
+      return [{
+        name: 'SustainOn',
+        time: parseInt(note.time)
+      }, {
+        name: 'SustainOff',
+        time: parseInt(note.time) + parseInt(note.duration)
+      }];
+    }
+  }
+
+  function convertToDeltaTime(result, event, index, events) {
+    var deltaTime = 0;
+
+    if (result.length !== 0) {
+      deltaTime = event.time - events[index - 1].time;
+    } else {
+      deltaTime = event.time;
+    }
+
+    return result.concat({
+      duration: event.duration,
+      time: event.time,
+      name: event.name,
+      midiNote: event.midiNote,
+      deltaTime: deltaTime,
+      velocity: event.velocity
+    });
   }
 
   /**
    *  Convert MIDI PPQ into Tone.js PPQ
    */
   function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
-    return Math.round((tick / ticksPerBeat) * PPQ) + 'i';
+    return Math.round(tick / ticksPerBeat * PPQ) + 'i';
   }
 
   /**
@@ -388,29 +1210,15 @@
    *  @param {Array} track Array of MIDI events
    *  @returns {Array} Sorted MIDI events
    */
-  function permuteImplicitNoteOff(track) {
-    var events = track.slice(),
-      i = 0,
-      event,
-      prevEvent,
-      tmp;
+  function permuteImplicitNoteOff(result, event, index, events) {
+    var prevEvent = events[index - 1];
 
-    if (!hasConsecutiveNoteOn(track)) {
-      return events;
-    }
+    if (index > 0 && event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
+      event.deltaTime = prevEvent.deltaTime;
+      prevEvent.deltaTime = 0;
 
-    for (i = 1; i < events.length - 1; i++) {
-      event = events[i];
-      prevEvent = events[i - 1];
-
-      if (event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
-        tmp = event.deltaTime;
-        event.deltaTime = prevEvent.deltaTime;
-        prevEvent.deltaTime = tmp;
-
-        events[i] = prevEvent;
-        events[i - 1] = event;
-      }
+      events[index] = prevEvent;
+      events[index - 1] = event;
     }
 
     return events;
@@ -421,28 +1229,18 @@
    *  @param {Array} track Array of MIDI events
    *  @returns {Boolean} true if consecutive 'noteOn' detected
    */
-  function hasConsecutiveNoteOn(track) {
-    var currentNote = {},
-      i = 0,
-      event;
+  function hasConsecutiveNoteOnForSamePitch(track) {
+    return toArray(track.reduce(groupByNote, {})).some(hasConsecutiveNoteOn);
+  }
 
-    while (i < track.length) {
-      event = track[i];
+  function groupByNote(result, event) {
+    result[event.noteNumber] = result[event.noteNumber] || [];
+    result[event.noteNumber].push(event);
+    return result;
+  }
 
-      if (event.subtype === 'noteOn' && currentNote[event.noteNumber]) {
-        return true;
-      }
-
-      if (event.subtype === 'noteOn') {
-        currentNote[event.noteNumber] = true;
-      } else if (event.subtype === 'noteOff') {
-        currentNote[event.noteNumber] = false;
-      }
-
-      i++;
-    }
-
-    return false;
+  function hasConsecutiveNoteOn(noteEvents) {
+    return noteEvents.some((e, index, array) => index > 0 && e.subtype === 'noteOn' && e.subtype === array[index - 1].subtype);
   }
 
   /**
@@ -453,112 +1251,149 @@
    *  @return {Object}
    */
   function parseParts(midiJson, options) {
-    var ticksPerBeat = midiJson.header.ticksPerBeat,
-      output = [],
-      pedal = false,
-      track,
-      trackNotes,
-      currentTime,
-      i,
-      j,
-      k,
-      evnt,
-      noteObj,
-      trackNote,
-      trackName,
-      obj;
+    options = Object.assign({
+      deterministic: false,
+      duration: true,
+      noteName: true,
+      PPQ: PPQ
+    }, options);
 
-    options = options || {};
-    options.PPQ = typeof options.PPQ === 'undefined' ? 192 : options.PPQ;
-    options.noteName = typeof options.noteName === 'undefined' ? true : options.noteName;
-    options.duration = typeof options.duration === 'undefined' ? true : options.duration;
-    options.velocity = typeof options.velocity === 'undefined' ? true : options.velocity;
+    return midiJson.tracks.reduce(convertTracksDeltaTimeToDuration, []);
 
-    for (i = 0; i < midiJson.tracks.length; i++) {
-      track = midiJson.tracks[i];
-      trackNotes = [];
-      currentTime = 0;
+    function convertTracksDeltaTimeToDuration(result, track) {
+      var currentTime = 0,
+        pedal = false;
 
-      if (options.duration) {
-        track = permuteImplicitNoteOff(track);
+      if (options.duration && hasConsecutiveNoteOnForSamePitch(track)) {
+        track = track.reduce(permuteImplicitNoteOff);
       }
 
-      for (j = 0; j < track.length; j++) {
-        evnt = track[j];
-        currentTime += evnt.deltaTime;
+      track = track.reduce(convertDeltaTimeToDuration, []);
 
-        if (evnt.subtype === 'noteOn') {
-          noteObj = {
-            _note: evnt.noteNumber,
-            _ticks: currentTime,
-            midiNote: evnt.noteNumber,
-            time: currentTime
-          };
+      if (options.duration) {
+        track = track.map(convertTicks);
+      }
 
-          if (options.noteName) {
-            noteObj.noteName = midiToNote(evnt.noteNumber);
-          }
+      if (options.deterministic) {
+        track = track.sort(compareTime$1);
+      }
 
-          if (options.velocity) {
-            noteObj.velocity = evnt.velocity / 127;
-          }
+      if (track.length === 0) {
+        return result;
+      }
 
-          trackNotes.push(noteObj);
-        } else if (evnt.subtype === 'noteOff') {
+      return result.concat([track]);
 
-          // Add the duration
-          for (k = trackNotes.length - 1; k >= 0; k--) {
-            trackNote = trackNotes[k];
-            if (trackNote._note === evnt.noteNumber && typeof trackNote.duration === 'undefined') {
-              if (options.duration) {
-                trackNote.duration = ticksToToneTicks(currentTime - trackNote._ticks, ticksPerBeat, options.PPQ);
-              }
-              trackNote.time = ticksToToneTicks(trackNote.time, ticksPerBeat, options.PPQ);
-              delete trackNote._note;
-              delete trackNote._ticks;
-              break;
+      function convertTicks(e) {
+        e.time = ticksToToneTicks(e.time, midiJson.header.ticksPerBeat, options.PPQ);
+        e.duration = ticksToToneTicks(e.duration, midiJson.header.ticksPerBeat, options.PPQ);
+        return e;
+      }
+
+      function convertDeltaTimeToDuration(result, event) {
+        var note,
+          prevNote;
+
+        currentTime += event.deltaTime;
+
+        switch (true) {
+
+          case event.subtype === 'noteOn':
+            note = {
+              midiNote: event.noteNumber,
+              time: currentTime,
+              velocity: event.velocity / 127
+            };
+
+            if (options.noteName) {
+              note.noteName = noteFromMidiPitch(event.noteNumber);
             }
-          }
-        } else if (evnt.type === 'meta' && evnt.subtype === 'trackName') {
-          trackName = evnt.text;
 
-          // Ableton Live adds an additional character to the track name
-          trackName = trackName.replace(/\u0000/g, '');
+            return result.concat(note);
 
-        } else if (evnt.controllerType === CONTROL_CHANGE_SUSTAIN_PEDAL) {
-          if (evnt.value >= 64 && !pedal) {
-            obj = {
-              _ticks: currentTime,
+          case event.subtype === 'noteOff':
+            prevNote = result.filter(e => e.midiNote === event.noteNumber && typeof e.duration === 'undefined').pop();
+
+            if (prevNote) {
+              prevNote.duration = currentTime - prevNote.time;
+            }
+
+            return result;
+
+          case event.controllerType === EVENT.CONTROLLER.DAMPER_PEDAL && event.value >= 64 && !pedal:
+            note = {
               eventName: 'sustain',
               time: currentTime
             };
             pedal = true;
-            trackNotes.push(obj);
-          } else if (evnt.value < 64 && pedal) {
-            for (k = trackNotes.length - 1; k >= 0; k--) {
-              trackNote = trackNotes[k];
-              if (trackNote.eventName === 'sustain' && typeof trackNote.duration === 'undefined') {
-                if (options.duration) {
-                  trackNote.duration = ticksToToneTicks(currentTime - trackNote._ticks, ticksPerBeat, options.PPQ);
-                }
-                trackNote.time = ticksToToneTicks(trackNote.time, ticksPerBeat, options.PPQ);
-                delete trackNote._note;
-                delete trackNote._ticks;
-                break;
-              }
+            return result.concat(note);
+
+          case event.controllerType === EVENT.CONTROLLER.DAMPER_PEDAL && event.value < 64 && pedal:
+            prevNote = result.filter(e => e.eventName === 'sustain' && typeof e.duration === 'undefined').pop();
+
+            if (prevNote) {
+              prevNote.duration = currentTime - prevNote.time;
             }
+
             pedal = false;
-          }
+            return result;
+
+          default:
+            return result;
         }
       }
-      if (trackNotes.length > 0) {
-        output.push(trackNotes);
-      }
     }
-    return output;
   }
 
-  var MidiConvert = { parse };
+  function compareTime$1(a, b) {
+    var time = parseInt(a.time) - parseInt(b.time),
+      midiNote = a.midiNote && b.midiNote && a.midiNote - b.midiNote,
+      duration = parseInt(b.duration) - parseInt(a.duration),
+      velocity = b.velocity - a.velocity;
+    return time || midiNote || duration || velocity;
+  }
+
+  /**
+   *  Parse tempo and time signature from the midiJson
+   *  @param {Object} midiJson
+   *  @return {Object}
+   */
+  function parseTransport(midiJson) {
+    var flattenedEvents = midiJson.tracks.reduce(flatten, []),
+      instruments = midiJson.tracks.reduce(getInstruments, {});
+
+    return {
+      bpm: getTempo(flattenedEvents),
+      instruments: toArray(instruments),
+      timeSignature: getTimeSignature(flattenedEvents)
+    };
+  }
+
+  function getInstruments(result, track) {
+    var event = track.filter(e => e.subtype === 'programChange').pop();
+
+    if (event) {
+      result[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
+    }
+
+    return result;
+  }
+
+  function getTimeSignature(events) {
+    var event = events.filter(e => e.subtype === 'timeSignature').pop();
+    return event ? [event.numerator, event.denominator] : null;
+  }
+
+  function getTempo(events) {
+    var event = events.filter(e => e.subtype === 'setTempo').pop();
+    return event ? 60000000 / event.microsecondsPerBeat : null;
+  }
+
+  var MidiConvert = {
+    generate,
+    MidiGen,
+    parse
+  };
 
   /**
    *  Convert a midi file to a Tone.Part-friendly JSON representation
@@ -570,7 +1405,7 @@
     var midiJson = MidiFile(fileBlob);
 
     if (midiJson.header.formatType === 0) {
-      splitType0(midiJson);
+      midiJson.tracks = splitType0(midiJson.tracks[0]);
     }
 
     return {
@@ -579,44 +1414,29 @@
     };
   }
 
-  function splitType0(midiJson) {
-    var tracksMap = {},
-      absoluteTime = 0,
-      tracks = [],
-      event,
-      channel,
-      prevEvent,
-      track,
-      i;
+  function splitType0(track) {
+    var absoluteTime = 0,
+      tracksMap = track.reduce(groupByChannel, {});
 
-    for (i = 0; i < midiJson.tracks[0].length; i++) {
-      event = midiJson.tracks[0][i];
-      channel = event.channel || 0;
+    return toArray(tracksMap);
+
+    function groupByChannel(result, event) {
+      var channel = event.channel || 0,
+        prevEvent;
+
+      result[channel] = result[channel] || [];
+      prevEvent = result[channel][result[channel].length - 1];
+      result[channel].push(event);
 
       absoluteTime += event.deltaTime;
       event.absoluteTime = absoluteTime;
 
-      tracksMap[channel] = tracksMap[channel] || [];
-      prevEvent = tracksMap[channel][tracksMap[channel].length - 1];
-      tracksMap[channel].push(event);
+      event.deltaTime = prevEvent ?
+        event.absoluteTime - prevEvent.absoluteTime :
+        event.absoluteTime;
 
-      if (prevEvent) {
-        event.deltaTime = event.absoluteTime - prevEvent.absoluteTime;
-      } else {
-        event.deltaTime = event.absoluteTime;
-      }
+      return result;
     }
-
-    midiJson.tracks = [];
-
-    for (track in tracksMap) {
-      if (tracksMap.hasOwnProperty(track)) {
-        tracks.push(tracksMap[track]);
-      }
-    }
-
-    midiJson.tracks = tracks;
-    midiJson.header.trackCount = tracks.length;
   }
 
   return MidiConvert;

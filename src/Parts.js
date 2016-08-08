@@ -1,24 +1,14 @@
-var CONTROL_CHANGE_SUSTAIN_PEDAL = 64;
+import { EVENT, PPQ } from './Constants.js';
+import { noteFromMidiPitch } from './MidiGenUtil.js';
+import { toArray } from './Util.js';
 
 export default parseParts;
-
-/**
- *  Convert a MIDI number to scientific pitch notation
- *  @param {Number} midi The MIDI note number
- *  @returns {String} The note in scientific pitch notation
- */
-function midiToNote(midi) {
-  var scaleIndexToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
-    octave = Math.floor(midi / 12) - 1,
-    note = midi % 12;
-  return scaleIndexToNote[note] + octave;
-}
 
 /**
  *  Convert MIDI PPQ into Tone.js PPQ
  */
 function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
-  return Math.round((tick / ticksPerBeat) * PPQ) + 'i';
+  return Math.round(tick / ticksPerBeat * PPQ) + 'i';
 }
 
 /**
@@ -26,29 +16,15 @@ function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
  *  @param {Array} track Array of MIDI events
  *  @returns {Array} Sorted MIDI events
  */
-function permuteImplicitNoteOff(track) {
-  var events = track.slice(),
-    i = 0,
-    event,
-    prevEvent,
-    tmp;
+function permuteImplicitNoteOff(result, event, index, events) {
+  var prevEvent = events[index - 1];
 
-  if (!hasConsecutiveNoteOn(track)) {
-    return events;
-  }
+  if (index > 0 && event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
+    event.deltaTime = prevEvent.deltaTime;
+    prevEvent.deltaTime = 0;
 
-  for (i = 1; i < events.length - 1; i++) {
-    event = events[i];
-    prevEvent = events[i - 1];
-
-    if (event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
-      tmp = event.deltaTime;
-      event.deltaTime = prevEvent.deltaTime;
-      prevEvent.deltaTime = tmp;
-
-      events[i] = prevEvent;
-      events[i - 1] = event;
-    }
+    events[index] = prevEvent;
+    events[index - 1] = event;
   }
 
   return events;
@@ -59,28 +35,18 @@ function permuteImplicitNoteOff(track) {
  *  @param {Array} track Array of MIDI events
  *  @returns {Boolean} true if consecutive 'noteOn' detected
  */
-function hasConsecutiveNoteOn(track) {
-  var currentNote = {},
-    i = 0,
-    event;
+function hasConsecutiveNoteOnForSamePitch(track) {
+  return toArray(track.reduce(groupByNote, {})).some(hasConsecutiveNoteOn);
+}
 
-  while (i < track.length) {
-    event = track[i];
+function groupByNote(result, event) {
+  result[event.noteNumber] = result[event.noteNumber] || [];
+  result[event.noteNumber].push(event);
+  return result;
+}
 
-    if (event.subtype === 'noteOn' && currentNote[event.noteNumber]) {
-      return true;
-    }
-
-    if (event.subtype === 'noteOn') {
-      currentNote[event.noteNumber] = true;
-    } else if (event.subtype === 'noteOff') {
-      currentNote[event.noteNumber] = false;
-    }
-
-    i++;
-  }
-
-  return false;
+function hasConsecutiveNoteOn(noteEvents) {
+  return noteEvents.some((e, index, array) => index > 0 && e.subtype === 'noteOn' && e.subtype === array[index - 1].subtype);
 }
 
 /**
@@ -91,107 +57,104 @@ function hasConsecutiveNoteOn(track) {
  *  @return {Object}
  */
 function parseParts(midiJson, options) {
-  var ticksPerBeat = midiJson.header.ticksPerBeat,
-    output = [],
-    pedal = false,
-    track,
-    trackNotes,
-    currentTime,
-    i,
-    j,
-    k,
-    evnt,
-    noteObj,
-    trackNote,
-    trackName,
-    obj;
+  options = Object.assign({
+    deterministic: false,
+    duration: true,
+    noteName: true,
+    PPQ: PPQ
+  }, options);
 
-  options = options || {};
-  options.PPQ = typeof options.PPQ === 'undefined' ? 192 : options.PPQ;
-  options.noteName = typeof options.noteName === 'undefined' ? true : options.noteName;
-  options.duration = typeof options.duration === 'undefined' ? true : options.duration;
-  options.velocity = typeof options.velocity === 'undefined' ? true : options.velocity;
+  return midiJson.tracks.reduce(convertTracksDeltaTimeToDuration, []);
 
-  for (i = 0; i < midiJson.tracks.length; i++) {
-    track = midiJson.tracks[i];
-    trackNotes = [];
-    currentTime = 0;
+  function convertTracksDeltaTimeToDuration(result, track) {
+    var currentTime = 0,
+      pedal = false;
 
-    if (options.duration) {
-      track = permuteImplicitNoteOff(track);
+    if (options.duration && hasConsecutiveNoteOnForSamePitch(track)) {
+      track = track.reduce(permuteImplicitNoteOff);
     }
 
-    for (j = 0; j < track.length; j++) {
-      evnt = track[j];
-      currentTime += evnt.deltaTime;
+    track = track.reduce(convertDeltaTimeToDuration, []);
 
-      if (evnt.subtype === 'noteOn') {
-        noteObj = {
-          _note: evnt.noteNumber,
-          _ticks: currentTime,
-          midiNote: evnt.noteNumber,
-          time: currentTime
-        };
+    if (options.duration) {
+      track = track.map(convertTicks);
+    }
 
-        if (options.noteName) {
-          noteObj.noteName = midiToNote(evnt.noteNumber);
-        }
+    if (options.deterministic) {
+      track = track.sort(compareTime);
+    }
 
-        if (options.velocity) {
-          noteObj.velocity = evnt.velocity / 127;
-        }
+    if (track.length === 0) {
+      return result;
+    }
 
-        trackNotes.push(noteObj);
-      } else if (evnt.subtype === 'noteOff') {
+    return result.concat([track]);
 
-        // Add the duration
-        for (k = trackNotes.length - 1; k >= 0; k--) {
-          trackNote = trackNotes[k];
-          if (trackNote._note === evnt.noteNumber && typeof trackNote.duration === 'undefined') {
-            if (options.duration) {
-              trackNote.duration = ticksToToneTicks(currentTime - trackNote._ticks, ticksPerBeat, options.PPQ);
-            }
-            trackNote.time = ticksToToneTicks(trackNote.time, ticksPerBeat, options.PPQ);
-            delete trackNote._note;
-            delete trackNote._ticks;
-            break;
+    function convertTicks(e) {
+      e.time = ticksToToneTicks(e.time, midiJson.header.ticksPerBeat, options.PPQ);
+      e.duration = ticksToToneTicks(e.duration, midiJson.header.ticksPerBeat, options.PPQ);
+      return e;
+    }
+
+    function convertDeltaTimeToDuration(result, event) {
+      var note,
+        prevNote;
+
+      currentTime += event.deltaTime;
+
+      switch (true) {
+
+        case event.subtype === 'noteOn':
+          note = {
+            midiNote: event.noteNumber,
+            time: currentTime,
+            velocity: event.velocity / 127
+          };
+
+          if (options.noteName) {
+            note.noteName = noteFromMidiPitch(event.noteNumber);
           }
-        }
-      } else if (evnt.type === 'meta' && evnt.subtype === 'trackName') {
-        trackName = evnt.text;
 
-        // Ableton Live adds an additional character to the track name
-        trackName = trackName.replace(/\u0000/g, '');
+          return result.concat(note);
 
-      } else if (evnt.controllerType === CONTROL_CHANGE_SUSTAIN_PEDAL) {
-        if (evnt.value >= 64 && !pedal) {
-          obj = {
-            _ticks: currentTime,
+        case event.subtype === 'noteOff':
+          prevNote = result.filter(e => e.midiNote === event.noteNumber && typeof e.duration === 'undefined').pop();
+
+          if (prevNote) {
+            prevNote.duration = currentTime - prevNote.time;
+          }
+
+          return result;
+
+        case event.controllerType === EVENT.CONTROLLER.DAMPER_PEDAL && event.value >= 64 && !pedal:
+          note = {
             eventName: 'sustain',
             time: currentTime
           };
           pedal = true;
-          trackNotes.push(obj);
-        } else if (evnt.value < 64 && pedal) {
-          for (k = trackNotes.length - 1; k >= 0; k--) {
-            trackNote = trackNotes[k];
-            if (trackNote.eventName === 'sustain' && typeof trackNote.duration === 'undefined') {
-              if (options.duration) {
-                trackNote.duration = ticksToToneTicks(currentTime - trackNote._ticks, ticksPerBeat, options.PPQ);
-              }
-              trackNote.time = ticksToToneTicks(trackNote.time, ticksPerBeat, options.PPQ);
-              delete trackNote._note;
-              delete trackNote._ticks;
-              break;
-            }
+          return result.concat(note);
+
+        case event.controllerType === EVENT.CONTROLLER.DAMPER_PEDAL && event.value < 64 && pedal:
+          prevNote = result.filter(e => e.eventName === 'sustain' && typeof e.duration === 'undefined').pop();
+
+          if (prevNote) {
+            prevNote.duration = currentTime - prevNote.time;
           }
+
           pedal = false;
-        }
+          return result;
+
+        default:
+          return result;
       }
     }
-    if (trackNotes.length > 0) {
-      output.push(trackNotes);
-    }
   }
-  return output;
+}
+
+function compareTime(a, b) {
+  var time = parseInt(a.time) - parseInt(b.time),
+    midiNote = a.midiNote && b.midiNote && a.midiNote - b.midiNote,
+    duration = parseInt(b.duration) - parseInt(a.duration),
+    velocity = b.velocity - a.velocity;
+  return time || midiNote || duration || velocity;
 }

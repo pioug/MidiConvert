@@ -1,3 +1,5 @@
+import { flatten, toArray } from './Util.js';
+
 export default parseTransport;
 
 /**
@@ -6,38 +8,32 @@ export default parseTransport;
  *  @return {Object}
  */
 function parseTransport(midiJson) {
-  var ret = {
-      instruments: []
-    },
-    instrumentsMap = {},
-    track,
-    i,
-    j,
-    datum;
+  var flattenedEvents = midiJson.tracks.reduce(flatten, []),
+    instruments = midiJson.tracks.reduce(getInstruments, {});
 
-  for (i = 0; i < midiJson.tracks.length; i++) {
-    track = midiJson.tracks[i];
-    for (j = 0; j < track.length; j++) {
-      datum = track[j];
-      if (datum.type === 'meta') {
-        if (datum.subtype === 'timeSignature') {
-          ret.timeSignature = [datum.numerator, datum.denominator];
-        } else if (datum.subtype === 'setTempo') {
-          ret.bpm = 60000000 / datum.microsecondsPerBeat;
-        }
-      } else if (datum.type === 'channel') {
-        if (datum.subtype === 'programChange') {
-          instrumentsMap[datum.channel] = datum.channel === 9 ? 0 : datum.programNumber + 1;
-        }
-      }
-    }
+  return {
+    bpm: getTempo(flattenedEvents),
+    instruments: toArray(instruments),
+    timeSignature: getTimeSignature(flattenedEvents)
+  };
+}
+
+function getInstruments(result, track) {
+  var event = track.filter(e => e.subtype === 'programChange').pop();
+
+  if (event) {
+    result[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
   }
 
-  for (track in instrumentsMap) {
-    if (instrumentsMap.hasOwnProperty(track)) {
-      ret.instruments.push(instrumentsMap[track]);
-    }
-  }
+  return result;
+}
 
-  return ret;
+function getTimeSignature(events) {
+  var event = events.filter(e => e.subtype === 'timeSignature').pop();
+  return event ? [event.numerator, event.denominator] : null;
+}
+
+function getTempo(events) {
+  var event = events.filter(e => e.subtype === 'setTempo').pop();
+  return event ? 60000000 / event.microsecondsPerBeat : null;
 }
