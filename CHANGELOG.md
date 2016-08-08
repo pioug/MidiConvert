@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0-beta.2
+
+### What's new
+
+- Filter unknown events when generating MIDI file
+
 ## 3.0.0-beta.1
 
 ### What's new
