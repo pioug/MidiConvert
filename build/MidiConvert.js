@@ -213,7 +213,7 @@
           subtypeByte = stream.readInt8();
           length = stream.readVarInt();
           switch (subtypeByte) {
-            case META_EVENT.SEQUENCE_NUMMBER:
+            case META_EVENT.SEQUENCE_NUMBER:
               event.subtype = 'sequenceNumber';
               if (length !== 2) {
                 throw 'Expected length for sequenceNumber event is 2, got ' + length;
