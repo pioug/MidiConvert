@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0-beta.4
+
+### What's new
+
+- Optimise MIDI file generation
+
 ## 3.0.0-beta.3
 
 *Cleanup debug code*
