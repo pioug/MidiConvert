@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0-beta.5
+
+### What's new
+
+- Remove `NoteOn`/`NoteOff` permutation mechanism
+- Filter out simultaneous notes on same pitch
+
 ## 3.0.0-beta.4
 
 ### What's new
