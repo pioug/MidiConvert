@@ -52,6 +52,7 @@ function insertEvents(track, event) {
 function smartSort(result, event, index, events) {
   var prev = result[result.length - 1],
     next = event,
+    ongoing,
     potentialCanditates;
 
   if (!result.length) {
@@ -60,18 +61,20 @@ function smartSort(result, event, index, events) {
   }
 
   next = events.find(e => !e.taken && e.time >= prev.time);
+  ongoing = result.filter(e => e.midiNote === next.midiNote).pop();
 
-  if (!next.duration) {
+  if (!ongoing) {
     next.taken = true;
     return result.concat(next);
   }
 
   potentialCanditates = events.filter(e => !e.taken && e.time === next.time);
 
-  next =
-    potentialCanditates.find(e => e.name.includes('Off')) ||
-    potentialCanditates.find(e => e.duration > next.duration) ||
-    next;
+  if (ongoing && ongoing.name.includes('On')) {
+    next = potentialCanditates.find(e => e.name.includes('Off')) || next;
+  } else if (ongoing && ongoing.name.includes('Off')) {
+    next = potentialCanditates.find(e => e.name.includes('On')) || next;
+  }
 
   next.taken = true;
   return result.concat(next);
