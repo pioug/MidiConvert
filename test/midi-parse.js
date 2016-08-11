@@ -50,6 +50,7 @@ ava('Prelude in D minor format 0 midi file', function(t) {
       duration: true
     });
 
+  // fs.writeFileSync('./midi/bwv-850.json', JSON.stringify(parsedData.parts));
   t.deepEqual(parsedData.transport.timeSignature, [4, 4], 'gets the time signature from the file');
   t.deepEqual(Math.round(parsedData.transport.bpm * 100) / 100, 51, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');

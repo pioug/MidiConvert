@@ -71,3 +71,10 @@ ava('Parse then generate single-track-multi-channel.mid', function(t) {
     destinationData = parse(generate(sourceData), midiConvertOpts);
   t.deepEqual(sourceData, destinationData);
 });
+
+ava('Parse then generate 462a505b-2d88-957c-fd63-f25754dd6af5-orignal.mid', function(t) {
+  var sourceFile = fs.readFileSync('./midi/462a505b-2d88-957c-fd63-f25754dd6af5-orignal.mid', 'binary'),
+    sourceData = parse(sourceFile, midiConvertOpts),
+    destinationData = parse(generate(sourceData), midiConvertOpts);
+  t.deepEqual(sourceData, destinationData);
+});

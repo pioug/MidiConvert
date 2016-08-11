@@ -1,6 +1,5 @@
 import { EVENT, PPQ } from './Constants.js';
 import { noteFromMidiPitch } from './MidiGenUtil.js';
-import { toArray } from './Util.js';
 
 export default parseParts;
 
@@ -9,44 +8,6 @@ export default parseParts;
  */
 function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
   return Math.round(tick / ticksPerBeat * PPQ) + 'i';
-}
-
-/**
- *  Permute noteOff happening after noteOn (of the same note) without delta time.
- *  @param {Array} track Array of MIDI events
- *  @returns {Array} Sorted MIDI events
- */
-function permuteImplicitNoteOff(result, event, index, events) {
-  var prevEvent = events[index - 1];
-
-  if (index > 0 && event.deltaTime === 0 && event.subtype === 'noteOff' && prevEvent.subtype === 'noteOn' && event.noteNumber === prevEvent.noteNumber) {
-    event.deltaTime = prevEvent.deltaTime;
-    prevEvent.deltaTime = 0;
-
-    events[index] = prevEvent;
-    events[index - 1] = event;
-  }
-
-  return events;
-}
-
-/**
- *  Look for consecutive 'noteOn' to decide if permutation is necessary
- *  @param {Array} track Array of MIDI events
- *  @returns {Boolean} true if consecutive 'noteOn' detected
- */
-function hasConsecutiveNoteOnForSamePitch(track) {
-  return toArray(track.reduce(groupByNote, {})).some(hasConsecutiveNoteOn);
-}
-
-function groupByNote(result, event) {
-  result[event.noteNumber] = result[event.noteNumber] || [];
-  result[event.noteNumber].push(event);
-  return result;
-}
-
-function hasConsecutiveNoteOn(noteEvents) {
-  return noteEvents.some((e, index, array) => index > 0 && e.subtype === 'noteOn' && e.subtype === array[index - 1].subtype);
 }
 
 /**
@@ -70,11 +31,10 @@ function parseParts(midiJson, options) {
     var currentTime = 0,
       pedal = false;
 
-    if (options.duration && hasConsecutiveNoteOnForSamePitch(track)) {
-      track = track.reduce(permuteImplicitNoteOff);
-    }
-
-    track = track.reduce(convertDeltaTimeToDuration, []);
+    track =
+      track
+        .reduce(convertDeltaTimeToDuration, [])
+        .filter(simulateousNote);
 
     if (options.duration) {
       track = track.map(convertTicks);
@@ -96,6 +56,10 @@ function parseParts(midiJson, options) {
       return e;
     }
 
+    function simulateousNote(event, index, array) {
+      return !array.find(e => e !== event && e.midiNote === event.midiNote && e.time === event.time && e.duration > event.duration);
+    }
+
     function convertDeltaTimeToDuration(result, event) {
       var note,
         prevNote;
@@ -105,9 +69,15 @@ function parseParts(midiJson, options) {
       switch (true) {
 
         case event.subtype === 'noteOn':
+          prevNote = result.filter(e => e.midiNote === event.noteNumber && typeof e.duration === 'undefined').pop();
+
+          if (prevNote) {
+            prevNote.duration = currentTime - prevNote.time;
+          }
+
           note = {
-            midiNote: event.noteNumber,
             time: currentTime,
+            midiNote: event.noteNumber,
             velocity: event.velocity / 127
           };
 

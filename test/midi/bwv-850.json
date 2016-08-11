@@ -4611,12 +4611,6 @@
 		{
 			"time": "3672i",
 			"midiNote": 62,
-			"velocity": 0.5354330708661418,
-			"duration": "48i"
-		},
-		{
-			"time": "3672i",
-			"midiNote": 62,
 			"velocity": 0.5275590551181102,
 			"duration": "3i"
 		},
@@ -4757,12 +4751,6 @@
 			"midiNote": 52,
 			"velocity": 0.4409448818897638,
 			"duration": "6i"
-		},
-		{
-			"time": "3768i",
-			"midiNote": 69,
-			"velocity": 0.5590551181102362,
-			"duration": "48i"
 		},
 		{
 			"time": "3768i",
@@ -5002,7 +4990,7 @@
 			"time": "3888i",
 			"midiNote": 74,
 			"velocity": 0.5118110236220472,
-			"duration": "24i"
+			"duration": "18i"
 		},
 		{
 			"time": "3888i",
@@ -5333,12 +5321,6 @@
 			"midiNote": 54,
 			"velocity": 0.5196850393700787,
 			"duration": "2i"
-		},
-		{
-			"time": "4056i",
-			"midiNote": 71,
-			"velocity": 0.5748031496062992,
-			"duration": "48i"
 		},
 		{
 			"time": "4056i",
@@ -6219,12 +6201,6 @@
 		{
 			"time": "4536i",
 			"midiNote": 74,
-			"velocity": 0.5590551181102362,
-			"duration": "48i"
-		},
-		{
-			"time": "4536i",
-			"midiNote": 74,
 			"velocity": 0.48031496062992124,
 			"duration": "3i"
 		},
@@ -6616,7 +6592,7 @@
 			"time": "4752i",
 			"midiNote": 69,
 			"velocity": 0.48031496062992124,
-			"duration": "72i"
+			"duration": "69i"
 		},
 		{
 			"time": "4752i",
@@ -6797,12 +6773,6 @@
 			"midiNote": 57,
 			"velocity": 0.44881889763779526,
 			"duration": "6i"
-		},
-		{
-			"time": "4896i",
-			"midiNote": 64,
-			"velocity": 0.49606299212598426,
-			"duration": "24i"
 		},
 		{
 			"time": "4896i",
@@ -7576,7 +7546,7 @@
 			"time": "5256i",
 			"midiNote": 57,
 			"velocity": 0.49606299212598426,
-			"duration": "24i"
+			"duration": "21i"
 		},
 		{
 			"time": "5258i",
