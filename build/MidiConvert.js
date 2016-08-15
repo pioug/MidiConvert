@@ -888,6 +888,15 @@
     return this;
   };
 
+  Track.prototype.setName = function(name, time) {
+    this.events.push(new MetaEvent({
+      type: META_EVENT.TRACK_NAME,
+      data: name,
+      time: time || 0
+    }));
+    return this;
+  };
+
   /**
    * Serialize the track to an array of bytes.
    *
@@ -1053,6 +1062,10 @@
 
       if (midiJson.transport.timeSignature) {
         track.setTimeSignature(midiJson.transport.timeSignature[0], midiJson.transport.timeSignature[1]);
+      }
+
+      if (midiJson.transport.trackNames && midiJson.transport.trackNames[index]) {
+        track.setName(midiJson.transport.trackNames[index]);
       }
 
       src.map(createEvents)
@@ -1294,13 +1307,26 @@
    */
   function parseTransport(midiJson) {
     var flattenedEvents = midiJson.tracks.reduce(flatten, []),
-      instruments = midiJson.tracks.reduce(getInstruments, {});
+      instruments = midiJson.tracks.reduce(getInstruments, {}),
+      trackNames = midiJson.tracks.reduce(getTrackNames, {});
 
     return {
       bpm: getTempo(flattenedEvents),
       instruments: toArray(instruments),
-      timeSignature: getTimeSignature(flattenedEvents)
+      timeSignature: getTimeSignature(flattenedEvents),
+      trackNames: toArray(trackNames)
     };
+  }
+
+  function getTrackNames(result, track, index) {
+    var event = track.filter(e => e.subtype === META_EVENT.TRACK_NAME).pop(),
+      hasNote = track.filter(e => e.subtype === EVENT.NOTE_ON).length;
+
+    if (event && hasNote) {
+      result[index] = event.text.replace(/\u0000/g, ''); // Ableton Live adds an additional character to the track name
+    }
+
+    return result;
   }
 
   function getInstruments(result, track) {

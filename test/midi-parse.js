@@ -18,6 +18,10 @@ ava('Goldberg Variation 1 format 1 midi file', function(t) {
       duration: true
     });
 
+  t.deepEqual(parsedData.transport.trackNames, [
+    'upper:',
+    'lower:'
+  ], 'extracts the names of track containing notes from the file');
   t.deepEqual(parsedData.transport.timeSignature, [3, 4], 'gets the time signature from the file');
   t.deepEqual(parsedData.transport.bpm, 60, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
@@ -34,6 +38,14 @@ ava('Prelude in C format 1 midi file', function(t) {
       duration: true
     });
 
+  t.deepEqual(parsedData.transport.trackNames, [
+    'Piano right',
+    'Piano left',
+    'Fuga 1',
+    'Fuga 2',
+    'Fuga 3',
+    'Fuga 4',
+  ], 'extracts the names of track containing notes from the file');
   t.deepEqual(parsedData.transport.timeSignature, [4, 4], 'gets the time signature from the file');
   t.deepEqual(Math.round(parsedData.transport.bpm * 100) / 100, 62.41, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
@@ -50,7 +62,7 @@ ava('Prelude in D minor format 0 midi file', function(t) {
       duration: true
     });
 
-  // fs.writeFileSync('./midi/bwv-850.json', JSON.stringify(parsedData.parts));
+  t.deepEqual(parsedData.transport.trackNames, ['Präludium und Fuge in D-Dur, BWV 850'], 'extracts the track names from the file');
   t.deepEqual(parsedData.transport.timeSignature, [4, 4], 'gets the time signature from the file');
   t.deepEqual(Math.round(parsedData.transport.bpm * 100) / 100, 51, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
@@ -67,6 +79,7 @@ ava('Prelude in C minor format 0 midi file', function(t) {
       duration: true
     });
 
+  t.deepEqual(parsedData.transport.trackNames, ['Das wohltemperierte Klavier I - Praeludium und Fuge 2 in c-Moll BWV 847'], 'extracts the track names from the file');
   t.falsy(parsedData.transport.bpm, 'gets the bpm from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file');
 });
@@ -113,6 +126,7 @@ ava('Billie Jean, with a last note without duration', function(t) {
       duration: true
     });
 
+  t.deepEqual(parsedData.transport.trackNames, ['117_BillieJean_MichaelJackson2'], 'extracts the track names from the file');
   t.deepEqual(parsedData.parts, midiJson, 'extracts the tracks from the file without permuting the noteOn/noteOff events');
 });
 

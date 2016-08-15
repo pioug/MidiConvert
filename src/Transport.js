@@ -10,13 +10,26 @@ export default parseTransport;
  */
 function parseTransport(midiJson) {
   var flattenedEvents = midiJson.tracks.reduce(flatten, []),
-    instruments = midiJson.tracks.reduce(getInstruments, {});
+    instruments = midiJson.tracks.reduce(getInstruments, {}),
+    trackNames = midiJson.tracks.reduce(getTrackNames, {});
 
   return {
     bpm: getTempo(flattenedEvents),
     instruments: toArray(instruments),
-    timeSignature: getTimeSignature(flattenedEvents)
+    timeSignature: getTimeSignature(flattenedEvents),
+    trackNames: toArray(trackNames)
   };
+}
+
+function getTrackNames(result, track, index) {
+  var event = track.filter(e => e.subtype === META_EVENT.TRACK_NAME).pop(),
+    hasNote = track.filter(e => e.subtype === EVENT.NOTE_ON).length;
+
+  if (event && hasNote) {
+    result[index] = event.text.replace(/\u0000/g, ''); // Ableton Live adds an additional character to the track name
+  }
+
+  return result;
 }
 
 function getInstruments(result, track) {

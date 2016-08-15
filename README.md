@@ -46,17 +46,18 @@ var midiObject = MidiConvert.parse(midiBlob, options);
 {
   transport: {
     bpm: 120,
+    instruments: [1, 25, 0],
     timeSignature: [4, 4],
-    instruments: [1, 2, 3]
+    trackNames: ["Solo piano", "Guitar riff", "Kick-ass drums"]
   },
   parts: [
     [
       {
-        "time": "0i",
-        "midiNote": 67,
-        "noteName": "G4",
-        "velocity": 0.7086614173228346,
-        "duration": "12i"
+        time: "0i",
+        midiNote: 67,
+        noteName: "G4",
+        velocity: 0.7086614173228346,
+        duration: "12i"
       },
       ... rest of events
     ],
@@ -161,6 +162,10 @@ Middle C is represented as `c4` or `60`.
 
 - `setTimeSignature(numerator, denominator[, time])`
   - Set the time signature with the given numerator and denominator
+  - If `time` is given, delay that many ticks before making the change
+
+- `setTrackName(name[, time])`
+  - Set the track name with the given string
   - If `time` is given, delay that many ticks before making the change
 
 ```

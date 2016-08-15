@@ -23,6 +23,10 @@ function generate(midiJson) {
       track.setTimeSignature(midiJson.transport.timeSignature[0], midiJson.transport.timeSignature[1]);
     }
 
+    if (midiJson.transport.trackNames && midiJson.transport.trackNames[index]) {
+      track.setName(midiJson.transport.trackNames[index]);
+    }
+
     src.map(createEvents)
       .filter(isTruthy)
       .reduce(flatten, [])
