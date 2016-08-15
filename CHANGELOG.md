@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0-beta.6
+
+### What's new
+
+- Use *hexadecimal* constants instead of strings
+- Add support for track name (parsing and writing)
+
 ## 3.0.0-beta.5
 
 ### What's new
