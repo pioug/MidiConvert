@@ -206,6 +206,15 @@ Track.prototype.setTempo = function(bpm, time) {
   return this;
 };
 
+Track.prototype.setName = function(name, time) {
+  this.events.push(new MetaEvent({
+    type: META_EVENT.TRACK_NAME,
+    data: name,
+    time: time || 0
+  }));
+  return this;
+};
+
 /**
  * Serialize the track to an array of bytes.
  *
