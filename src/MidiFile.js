@@ -66,7 +66,6 @@ function MidiFile(data) {
   function readEvent(stream) {
     var event = { deltaTime: stream.readVarInt() },
       eventTypeByte = stream.readInt8(),
-      subtypeByte,
       length,
       hourByte,
       param1,
@@ -76,59 +75,37 @@ function MidiFile(data) {
 
       if (eventTypeByte === 0xff) { // Meta event
         event.type = 'meta';
-        subtypeByte = stream.readInt8();
+        event.subtype = stream.readInt8();
         length = stream.readVarInt();
-        switch (subtypeByte) {
+        switch (event.subtype) {
+          case META_EVENT.COPYRIGHT_NOTICE:
+          case META_EVENT.CUE_POINT:
+          case META_EVENT.INSTRUMENT_NAME:
+          case META_EVENT.LYRICS:
+          case META_EVENT.MARKER:
+          case META_EVENT.SEQUENCER_SPECIFIC:
+          case META_EVENT.TEXT:
+          case META_EVENT.TRACK_NAME:
+            event.text = stream.read(length);
+            return event;
           case META_EVENT.SEQUENCE_NUMBER:
-            event.subtype = 'sequenceNumber';
             if (length !== 2) {
               throw 'Expected length for sequenceNumber event is 2, got ' + length;
             }
             event.number = stream.readInt16();
             return event;
-          case META_EVENT.TEXT:
-            event.subtype = 'text';
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.COPYRIGHT_NOTICE:
-            event.subtype = 'copyrightNotice';
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.TRACK_NAME:
-            event.subtype = 'trackName';
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.INSTRUMENT_NAME:
-            event.subtype = 'instrumentName';
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.LYRICS:
-            event.subtype = 'lyrics';
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.MARKER:
-            event.subtype = 'marker';
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.CUE_POINT:
-            event.subtype = 'cuePoint';
-            event.text = stream.read(length);
-            return event;
           case META_EVENT.MIDI_CHANNEL_PREFIX:
-            event.subtype = 'midiChannelPrefix';
             if (length !== 1) {
               throw 'Expected length for midiChannelPrefix event is 1, got ' + length;
             }
             event.channel = stream.readInt8();
             return event;
           case META_EVENT.END_OF_TRACK:
-            event.subtype = 'endOfTrack';
             if (length !== 0) {
               throw 'Expected length for endOfTrack event is 0, got ' + length;
             }
             return event;
           case META_EVENT.SET_TEMPO:
-            event.subtype = 'setTempo';
             if (length !== 3) {
               throw 'Expected length for setTempo event is 3, got ' + length;
             }
@@ -139,7 +116,6 @@ function MidiFile(data) {
             );
             return event;
           case META_EVENT.SMPTE_OFFSET:
-            event.subtype = 'smpteOffset';
             if (length !== 5) {
               throw 'Expected length for smpteOffset event is 5, got ' + length;
             }
@@ -154,7 +130,6 @@ function MidiFile(data) {
             event.subframe = stream.readInt8();
             return event;
           case META_EVENT.TIME_SIGNATURE:
-            event.subtype = 'timeSignature';
             if (length !== 4) {
               throw 'Expected length for timeSignature event is 4, got ' + length;
             }
@@ -164,16 +139,11 @@ function MidiFile(data) {
             event.thirtyseconds = stream.readInt8();
             return event;
           case META_EVENT.KEY_SIGNATURE:
-            event.subtype = 'keySignature';
             if (length !== 2) {
               throw 'Expected length for keySignature event is 2, got ' + length;
             }
             event.key = stream.readInt8(true);
             event.scale = stream.readInt8();
-            return event;
-          case META_EVENT.SEQUENCER_SPECIFIC:
-            event.subtype = 'sequencerSpecific';
-            event.data = stream.read(length);
             return event;
           default:
             event.subtype = 'unknown';
@@ -206,40 +176,34 @@ function MidiFile(data) {
         lastEventTypeByte = eventTypeByte;
       }
 
-      eventType = eventTypeByte & 0xf0;
+      event.subtype = eventTypeByte & 0xf0;
       event.channel = eventTypeByte & 0x0f;
       event.type = 'channel';
-      switch (eventType) {
+      switch (event.subtype) {
         case EVENT.NOTE_OFF:
-          event.subtype = 'noteOff';
           event.noteNumber = param1;
           event.velocity = stream.readInt8();
           return event;
         case EVENT.NOTE_ON:
           event.noteNumber = param1;
           event.velocity = stream.readInt8();
-          event.subtype = event.velocity === 0 ? 'noteOff' : 'noteOn';
+          event.subtype = event.velocity === 0 ? EVENT.NOTE_OFF : EVENT.NOTE_ON;
           return event;
         case EVENT.AFTER_TOUCH:
-          event.subtype = 'noteAftertouch';
           event.noteNumber = param1;
           event.amount = stream.readInt8();
           return event;
         case EVENT.CONTROL_CHANGE:
-          event.subtype = 'controlChange';
           event.controllerType = param1;
           event.value = stream.readInt8();
           return event;
         case EVENT.PROGRAM_CHANGE:
-          event.subtype = 'programChange';
           event.programNumber = param1;
           return event;
         case EVENT.CHANNEL_AFTERTOUCH:
-          event.subtype = 'channelAftertouch';
           event.amount = param1;
           return event;
         case EVENT.PITCH_BEND:
-          event.subtype = 'pitchBend';
           event.value = param1 + (stream.readInt8() << 7);
           return event;
         default:

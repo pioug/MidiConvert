@@ -68,7 +68,7 @@ function parseParts(midiJson, options) {
 
       switch (true) {
 
-        case event.subtype === 'noteOn':
+        case event.subtype === EVENT.NOTE_ON:
           prevNote = result.filter(e => e.midiNote === event.noteNumber && typeof e.duration === 'undefined').pop();
 
           if (prevNote) {
@@ -87,7 +87,7 @@ function parseParts(midiJson, options) {
 
           return result.concat(note);
 
-        case event.subtype === 'noteOff':
+        case event.subtype === EVENT.NOTE_OFF:
           prevNote = result.filter(e => e.midiNote === event.noteNumber && typeof e.duration === 'undefined').pop();
 
           if (prevNote) {
