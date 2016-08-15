@@ -1,3 +1,4 @@
+import { EVENT, META_EVENT } from './Constants.js';
 import { flatten, toArray } from './Util.js';
 
 export default parseTransport;
@@ -19,7 +20,7 @@ function parseTransport(midiJson) {
 }
 
 function getInstruments(result, track) {
-  var event = track.filter(e => e.subtype === 'programChange').pop();
+  var event = track.filter(e => e.subtype === EVENT.PROGRAM_CHANGE).pop();
 
   if (event) {
     result[event.channel] = event.channel === 9 ? 0 : event.programNumber + 1;
@@ -29,11 +30,11 @@ function getInstruments(result, track) {
 }
 
 function getTimeSignature(events) {
-  var event = events.filter(e => e.subtype === 'timeSignature').pop();
+  var event = events.filter(e => e.subtype === META_EVENT.TIME_SIGNATURE).pop();
   return event ? [event.numerator, event.denominator] : null;
 }
 
 function getTempo(events) {
-  var event = events.filter(e => e.subtype === 'setTempo').pop();
+  var event = events.filter(e => e.subtype === META_EVENT.SET_TEMPO).pop();
   return event ? 60000000 / event.microsecondsPerBeat : null;
 }
