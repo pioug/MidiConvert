@@ -10,8 +10,10 @@ import {
   midiPitchFromNote,
   mpqnFromBpm,
   noteFromMidiPitch,
+  secondsToTicks,
   str2Bytes,
-  translateTickTime
+  ticksToSeconds,
+  translateTickTime,
 } from './MidiGenUtil.js';
 
 import {
@@ -26,16 +28,18 @@ export default {
   MidiEvent,
   MetaEvent,
   Util: {
-    midiLetterPitches,
-    midiPitchesLetter,
-    midiFlattenedNotes,
-    midiPitchFromNote,
-    ensureMidiPitch,
-    noteFromMidiPitch,
-    mpqnFromBpm,
     bpmFromMpqn,
     codes2Str,
+    ensureMidiPitch,
+    midiFlattenedNotes,
+    midiLetterPitches,
+    midiPitchesLetter,
+    midiPitchFromNote,
+    mpqnFromBpm,
+    noteFromMidiPitch,
+    secondsToTicks,
     str2Bytes,
+    ticksToSeconds,
     translateTickTime
   }
 };
