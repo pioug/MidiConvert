@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0-beta.7
+
+### What's new
+
+- Add functions to convert ticks/seconds
+
 ## 3.0.0-beta.6
 
 ### What's new
