@@ -1,4 +1,4 @@
-import { midiFlattenedNotes, midiLetterPitches, midiPitchesLetter } from './Constants.js';
+import { midiFlattenedNotes, midiLetterPitches, midiPitchesLetter, PPQ } from './Constants.js';
 
 export {
   bpmFromMpqn,
@@ -7,8 +7,10 @@ export {
   midiPitchFromNote,
   mpqnFromBpm,
   noteFromMidiPitch,
+  secondsToTicks,
   str2Bytes,
-  translateTickTime
+  ticksToSeconds,
+  translateTickTime,
 };
 
 /**
@@ -175,4 +177,24 @@ function translateTickTime(ticks) {
     }
   }
   return bList;
+}
+
+/**
+ * @param {number} ticks - Number of ticks
+ * @param {number} bpm - BPM of MIDI score
+ * @returns {number} Number of seconds
+ */
+function ticksToSeconds(ticks, bpm) {
+  return 60 / bpm * ticks / PPQ;
+}
+
+/**
+ * Ticks are rounded up to prevent notes from being filtered out
+ * if the beginning of the MIDI is cut (in a DAW for example)
+ * @param {number} seconds - Number of seconds
+ * @param {number} bpm - BPM of MIDI score
+ * @returns {number} Number of ticks
+ */
+function secondsToTicks(seconds, bpm) {
+  return Math.ceil(seconds / 60 * bpm * PPQ);
 }

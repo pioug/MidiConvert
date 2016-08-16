@@ -514,6 +514,26 @@
   }
 
   /**
+   * @param {number} ticks - Number of ticks
+   * @param {number} bpm - BPM of MIDI score
+   * @returns {number} Number of seconds
+   */
+  function ticksToSeconds(ticks, bpm) {
+    return 60 / bpm * ticks / PPQ;
+  }
+
+  /**
+   * Ticks are rounded up to prevent notes from being filtered out
+   * if the beginning of the MIDI is cut (in a DAW for example)
+   * @param {number} seconds - Number of seconds
+   * @param {number} bpm - BPM of MIDI score
+   * @returns {number} Number of ticks
+   */
+  function secondsToTicks(seconds, bpm) {
+    return Math.ceil(seconds / 60 * bpm * PPQ);
+  }
+
+  /**
    * Construct a meta event.
    *
    * Parameters include:
@@ -1011,16 +1031,18 @@
     MidiEvent,
     MetaEvent,
     Util: {
-      midiLetterPitches,
-      midiPitchesLetter,
-      midiFlattenedNotes,
-      midiPitchFromNote,
-      ensureMidiPitch,
-      noteFromMidiPitch,
-      mpqnFromBpm,
       bpmFromMpqn,
       codes2Str,
+      ensureMidiPitch,
+      midiFlattenedNotes,
+      midiLetterPitches,
+      midiPitchesLetter,
+      midiPitchFromNote,
+      mpqnFromBpm,
+      noteFromMidiPitch,
+      secondsToTicks,
       str2Bytes,
+      ticksToSeconds,
       translateTickTime
     }
   };

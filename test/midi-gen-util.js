@@ -95,3 +95,57 @@ ava('Midi -> Util -> translateTickTime', function(t) {
   t.deepEqual(Util.translateTickTime(128), [129, 0], 'translateTickTime translates tick to MIDI timestamp as expected');
   t.deepEqual(Util.translateTickTime(512), [132, 0], 'translateTickTime translates tick to MIDI timestamp as expected');
 });
+
+ava('Midi -> Util -> ticksToSeconds', function(t) {
+  const tests = [
+    [0, 120, 0],
+    [1022, 120, 3.9921875],
+    [1024, 120, 4],
+    [1150, 120, 4.4921875],
+    [1152, 120, 4.5],
+    [126, 120, 0.4921875],
+    [1278, 120, 4.9921875],
+    [128, 120, 0.5],
+    [1280, 120, 5],
+    [1406, 120, 5.4921875],
+    [1408, 120, 5.5],
+    [1534, 120, 5.9921875],
+    [1536, 120, 6],
+    [1662, 120, 6.4921875],
+    [1664, 120, 6.5],
+    [1790, 120, 6.9921875],
+    [1792, 120, 7],
+    [1918, 120, 7.4921875],
+    [1920, 120, 7.5],
+    [2046, 120, 7.9921875],
+    [254, 120, 0.9921875],
+    [256, 120, 1],
+    [382, 120, 1.4921875],
+    [384, 120, 1.5],
+    [510, 120, 1.9921875],
+    [512, 120, 2],
+    [638, 120, 2.4921875],
+    [640, 120, 2.5],
+    [766, 120, 2.9921875],
+    [768, 120, 3],
+    [894, 120, 3.4921875],
+    [896, 120, 3.5],
+    [1, 120, 0.00390625]
+  ];
+
+  tests.map(function([ticks, bpm, result]) {
+    t.deepEqual(Util.ticksToSeconds(ticks, bpm), result, 'ticksToSeconds converts ticks to seconds');
+  });
+});
+
+ava('Midi -> Util -> secondsToTicks', function(t) {
+  const tests = [
+    [0, 120, 0],
+    [8, 120, 2048],
+    [1.1331065759636707, 120, 291]
+  ];
+
+  tests.map(function([seconds, bpm, result]) {
+    t.deepEqual(Util.secondsToTicks(seconds, bpm), result, 'ticksToSeconds converts seconds to ticks by rounding up');
+  });
+});
