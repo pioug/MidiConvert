@@ -5,10 +5,44 @@ import parts from './Parts.js';
 import transport from './Transport.js';
 import { toArray } from './Util.js';
 
+import {
+  bpmFromMpqn,
+  codes2Str,
+  ensureMidiPitch,
+  midiPitchFromNote,
+  mpqnFromBpm,
+  noteFromMidiPitch,
+  secondsToTicks,
+  str2Bytes,
+  ticksToSeconds,
+  translateTickTime,
+} from './MidiUtil.js';
+
+import {
+  midiFlattenedNotes,
+  midiLetterPitches,
+  midiPitchesLetter
+} from './Constants.js';
+
 export default {
   generate,
   MidiGen,
-  parse
+  parse,
+
+  bpmFromMpqn,
+  codes2Str,
+  ensureMidiPitch,
+  midiPitchFromNote,
+  mpqnFromBpm,
+  noteFromMidiPitch,
+  secondsToTicks,
+  str2Bytes,
+  ticksToSeconds,
+  translateTickTime,
+
+  midiFlattenedNotes,
+  midiLetterPitches,
+  midiPitchesLetter
 };
 
 /**

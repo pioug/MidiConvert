@@ -8,7 +8,7 @@ import {
   TICKS_PER_CLICK
 } from './Constants.js';
 
-import { ensureMidiPitch, mpqnFromBpm, str2Bytes } from './MidiGenUtil.js';
+import { ensureMidiPitch, mpqnFromBpm, str2Bytes } from './MidiUtil.js';
 
 var DEFAULT_VOLUME = 90,
   Track;

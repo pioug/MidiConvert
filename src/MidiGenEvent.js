@@ -1,5 +1,5 @@
 import { EVENT } from './Constants.js';
-import { translateTickTime } from './MidiGenUtil.js';
+import { translateTickTime } from './MidiUtil.js';
 
 /**
  * Construct a MIDI event.

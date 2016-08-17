@@ -1,4 +1,4 @@
-import { translateTickTime } from './MidiGenUtil.js';
+import { translateTickTime } from './MidiUtil.js';
 
 /**
  * Construct a meta event.

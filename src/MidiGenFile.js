@@ -1,6 +1,6 @@
 import Track from './MidiGenTrack.js';
 import { PPQ } from './Constants.js';
-import { codes2Str, str2Bytes } from './MidiGenUtil.js';
+import { codes2Str, str2Bytes } from './MidiUtil.js';
 
 /**
  * Construct a file object.

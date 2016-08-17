@@ -516,6 +516,7 @@
   /**
    * @param {number} ticks - Number of ticks
    * @param {number} bpm - BPM of MIDI score
+   * @param {number=} ppq - PPQ used when parsing MIDI file
    * @returns {number} Number of seconds
    */
   function ticksToSeconds(ticks, bpm, ppq = PPQ) {
@@ -527,6 +528,7 @@
    * if the beginning of the MIDI is cut (in a DAW for example)
    * @param {number} seconds - Number of seconds
    * @param {number} bpm - BPM of MIDI score
+   * @param {number=} ppq - PPQ used when parsing MIDI file
    * @returns {number} Number of ticks
    */
   function secondsToTicks(seconds, bpm, ppq = PPQ) {
@@ -1030,21 +1032,6 @@
     Track: Track$1,
     MidiEvent,
     MetaEvent,
-    Util: {
-      bpmFromMpqn,
-      codes2Str,
-      ensureMidiPitch,
-      midiFlattenedNotes,
-      midiLetterPitches,
-      midiPitchesLetter,
-      midiPitchFromNote,
-      mpqnFromBpm,
-      noteFromMidiPitch,
-      secondsToTicks,
-      str2Bytes,
-      ticksToSeconds,
-      translateTickTime
-    }
   };
 
   function toArray(hash) {
@@ -1374,7 +1361,22 @@
   var MidiConvert = {
     generate,
     MidiGen,
-    parse
+    parse,
+
+    bpmFromMpqn,
+    codes2Str,
+    ensureMidiPitch,
+    midiPitchFromNote,
+    mpqnFromBpm,
+    noteFromMidiPitch,
+    secondsToTicks,
+    str2Bytes,
+    ticksToSeconds,
+    translateTickTime,
+
+    midiFlattenedNotes,
+    midiLetterPitches,
+    midiPitchesLetter
   };
 
   /**

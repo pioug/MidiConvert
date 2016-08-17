@@ -1,5 +1,5 @@
 import { EVENT, PPQ } from './Constants.js';
-import { noteFromMidiPitch } from './MidiGenUtil.js';
+import { noteFromMidiPitch } from './MidiUtil.js';
 
 export default parseParts;
 
