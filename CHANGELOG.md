@@ -2,27 +2,19 @@
 
 ## 3.0.0-beta.7
 
-### What's new
-
 - Add functions to convert ticks/seconds
 
 ## 3.0.0-beta.6
-
-### What's new
 
 - Use *hexadecimal* constants instead of strings
 - Add support for track name (parsing and writing)
 
 ## 3.0.0-beta.5
 
-### What's new
-
 - Remove `NoteOn`/`NoteOff` permutation mechanism
 - Filter out simultaneous notes on same pitch
 
 ## 3.0.0-beta.4
-
-### What's new
 
 - Optimise MIDI file generation
 
@@ -32,21 +24,15 @@
 
 ## 3.0.0-beta.2
 
-### What's new
-
 - Filter unknown events when generating MIDI file
 
 ## 3.0.0-beta.1
-
-### What's new
 
 - Remove method aliases of Track class
 - Rewrite former MidiConvert parsing functions in functional programming style
 - Cleanup instruments parsing
 
 ## 3.0.0-beta.0
-
-### What's new
 
 - Include functions from [dingram/jsmidgen](https://github.com/dingram/jsmidgen) to have MIDI writing feature
 - Share constants between former codes of `jsmidgen` and `MidiConvert`
@@ -57,13 +43,9 @@
 
 ## 2.1.1
 
-### What's new
-
 - Remove redundancy in instrument list
 
 ## 2.1.0
-
-### What's new
 
 - Use AVA for testing
 - Use nyc for test coverage
