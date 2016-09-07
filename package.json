@@ -22,10 +22,10 @@
   "devDependencies": {
     "ava": "0.16.0",
     "coveralls": "2.11.12",
-    "eslint": "3.3.0",
-    "eslint-config-bandlab": "3.2.0",
+    "eslint": "3.4.0",
+    "eslint-config-bandlab": "3.4.0",
     "google-closure-compiler": "20160713.2.0",
     "nyc": "8.1.0",
-    "rollup": "0.34.8"
+    "rollup": "0.34.13"
   }
 }
