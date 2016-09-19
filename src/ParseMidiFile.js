@@ -1,9 +1,9 @@
 import streamer from './Stream.js';
 import { EVENT, META_EVENT } from './Constants.js';
 
-export default MidiFile;
+export { parseMidiFile };
 
-function MidiFile(data) {
+function parseMidiFile(data) {
   var lastEventTypeByte,
     stream = streamer(data),
     headerChunk = readChunk(stream),

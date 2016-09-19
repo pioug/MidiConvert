@@ -1,5 +1,5 @@
-import MetaEvent from './MidiGenMetaEvent.js';
-import MidiEvent from './MidiGenEvent.js';
+import { MetaEvent } from './MidiGenMetaEvent.js';
+import { MidiEvent } from './MidiGenEvent.js';
 
 import {
   EVENT,
@@ -246,4 +246,4 @@ Track.prototype.toBytes = function() {
   return startBytes.concat(lengthBytes, eventBytes, endBytes);
 };
 
-export default Track;
+export { Track };

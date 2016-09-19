@@ -80,4 +80,4 @@ MetaEvent.prototype.toBytes = function() {
   return byteArray;
 };
 
-export default MetaEvent;
+export { MetaEvent };

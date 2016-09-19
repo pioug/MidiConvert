@@ -1,4 +1,4 @@
-import Track from './MidiGenTrack.js';
+import { Track } from './MidiGenTrack.js';
 import { PPQ } from './Constants.js';
 import { codes2Str, str2Bytes } from './MidiUtil.js';
 
@@ -77,4 +77,4 @@ File.prototype.toBytes = function() {
   return bytes;
 };
 
-export default File;
+export { File };
