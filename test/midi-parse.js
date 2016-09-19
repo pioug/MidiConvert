@@ -1,16 +1,16 @@
 import ava from 'ava';
-import MidiConvert from '../build/MidiConvert.js';
+import { parse } from '../build/MidiConvert.js';
 
 const fs = require('fs');
 
 ava('API', function(t) {
-  t.truthy(MidiConvert.parse, 'has parse method');
+  t.truthy(parse, 'has parse method');
 });
 
 ava('Goldberg Variation 1 format 1 midi file', function(t) {
   var midiData = fs.readFileSync('./midi/bwv-988-v01.mid', 'binary'),
     midiJson = require('./midi/bwv-988-v01.json'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 192,
       midiNote: true,
       noteName: true,
@@ -30,7 +30,7 @@ ava('Goldberg Variation 1 format 1 midi file', function(t) {
 ava('Prelude in C format 1 midi file', function(t) {
   var midiData = fs.readFileSync('./midi/bwv-846.mid', 'binary'),
     midiJson = require('./midi/bwv-846.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 96,
       midiNote: true,
       noteName: false,
@@ -54,7 +54,7 @@ ava('Prelude in C format 1 midi file', function(t) {
 ava('Prelude in D minor format 0 midi file', function(t) {
   var midiData = fs.readFileSync('./midi/bwv-850.mid', 'binary'),
     midiJson = require('./midi/bwv-850.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 24,
       midiNote: true,
       noteName: false,
@@ -71,7 +71,7 @@ ava('Prelude in D minor format 0 midi file', function(t) {
 ava('Prelude in C minor format 0 midi file', function(t) {
   var midiData = fs.readFileSync('./midi/bwv-847.mid', 'binary'),
     midiJson = require('./midi/bwv-847.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 192,
       midiNote: true,
       noteName: true,
@@ -87,7 +87,7 @@ ava('Prelude in C minor format 0 midi file', function(t) {
 ava('Funk kit with implicit note off events', function(t) {
   var midiData = fs.readFileSync('./midi/funk-kit.mid', 'binary'),
     midiJson = require('./midi/funk-kit.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 192,
       midiNote: true,
       noteName: true,
@@ -102,7 +102,7 @@ ava('Funk kit with implicit note off events', function(t) {
 ava('Single track, multi channel midi file (type 0)', function(t) {
   var midiData = fs.readFileSync('./midi/single-track-multi-channel.mid', 'binary'),
     midiJson = require('./midi/single-track-multi-channel.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 192,
       midiNote: true,
       noteName: true,
@@ -118,7 +118,7 @@ ava('Single track, multi channel midi file (type 0)', function(t) {
 ava('Billie Jean, with a last note without duration', function(t) {
   var midiData = fs.readFileSync('./midi/117_BillieJean_MichaelJackson2.mid', 'binary'),
     midiJson = require('./midi/117_BillieJean_MichaelJackson2.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 192,
       midiNote: true,
       noteName: true,
@@ -133,7 +133,7 @@ ava('Billie Jean, with a last note without duration', function(t) {
 ava('James Bond Theme, with multiple Program Change events in each track', function(t) {
   var midiData = fs.readFileSync('./midi/Movie_Themes_-_James_Bond.mid', 'binary'),
     midiJson = require('./midi/Movie_Themes_-_James_Bond.json', 'utf8'),
-    parsedData = MidiConvert.parse(midiData, {
+    parsedData = parse(midiData, {
       PPQ: 192,
       midiNote: true,
       noteName: true,

@@ -101,4 +101,4 @@ MidiEvent.prototype.toBytes = function() {
   return byteArray;
 };
 
-export default MidiEvent;
+export { MidiEvent };

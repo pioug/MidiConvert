@@ -118,13 +118,13 @@ var sourceFile = fs.readFileSync('./midi/bwv-846.mid', 'binary'),
 t.deepEqual(sourceData, destinationData) // TRUE;
 ```
 
-#### Class `MidiConvert.MidiGen.File`
+#### Class `MidiConvert.File`
 
 - `addTrack()` - Add a new Track object to the file and return the new track
 - `addTrack(track)` - Add the given Track object to the file and return the file
 - `toBytes()` - Convert to buffer
 
-#### Class `MidiConvert.Midi.Track`
+#### Class `MidiConvert.Track`
 
 Time and duration are specified in "ticks", and there is a hardcoded
 value of 128 ticks per beat. This means that a quarter note has a duration of 128.

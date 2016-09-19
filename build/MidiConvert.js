@@ -1,75 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global.MidiConvert = factory());
-}(this, (function () { 'use strict';
-
-/* Wrapper for accessing strings through sequential reads */
-function Stream(str) {
-  var position = 0;
-
-  return {
-    eof: eof,
-    read: read,
-    readInt32: readInt32,
-    readInt16: readInt16,
-    readInt8: readInt8,
-    readVarInt: readVarInt
-  };
-
-  function read(length) {
-    var result = str.substr(position, length);
-    position += length;
-    return result;
-  }
-
-  // Read a big-endian 32-bit integer
-  function readInt32() {
-    var result =
-      (str.charCodeAt(position) << 24) +
-      (str.charCodeAt(position + 1) << 16) +
-      (str.charCodeAt(position + 2) << 8) +
-      (str.charCodeAt(position + 3));
-    position += 4;
-    return result;
-  }
-
-  // Read a big-endian 16-bit integer
-  function readInt16() {
-    var result =
-      (str.charCodeAt(position) << 8) +
-      (str.charCodeAt(position + 1));
-    position += 2;
-    return result;
-  }
-
-  // Read an 8-bit integer
-  function readInt8(signed) {
-    var result = str.charCodeAt(position);
-    if (signed && result > 127) result -= 256;
-    position += 1;
-    return result;
-  }
-
-  function eof() {
-    return position >= str.length;
-  }
-
-  // Read a MIDI-style variable-length integer
-  // Big-endian value in groups of 7 bits,
-  // with top bit set to signify that another byte follows
-  function readVarInt() {
-    var result = 0,
-      b = readInt8();
-
-    while (b & 0x80) {
-      result += (b & 0x7f);
-      result <<= 7;
-      b = readInt8();
-    }
-    return result + b; // b is the last byte
-  }
-}
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (factory((global.MidiConvert = global.MidiConvert || {})));
+}(this, (function (exports) { 'use strict';
 
 var EVENT = {
     NOTE_OFF: 0x80,
@@ -136,216 +69,6 @@ var midiPitchesLetter = {
     22: 'A#',
     23: 'B'
   };
-
-function MidiFile(data) {
-  var lastEventTypeByte,
-    stream = Stream(data),
-    headerChunk = readChunk(stream),
-    tracks = [],
-    headerStream,
-    formatType,
-    trackCount,
-    ticksPerBeat,
-    i,
-    trackChunk,
-    trackStream,
-    event;
-
-  if (headerChunk.id !== 'MThd' || headerChunk.length !== 6) {
-    throw 'Bad .mid file - header not found';
-  }
-
-  headerStream = Stream(headerChunk.data);
-  formatType = headerStream.readInt16();
-  trackCount = headerStream.readInt16();
-  ticksPerBeat = headerStream.readInt16();
-
-  if (ticksPerBeat & 0x8000) {
-    throw 'Expressing time division in SMTPE frames is not supported yet';
-  }
-
-  for (i = 0; i < trackCount; i++) {
-    tracks[i] = [];
-    trackChunk = readChunk(stream);
-    if (trackChunk.id !== 'MTrk') {
-      throw 'Unexpected chunk - expected MTrk, got ' + trackChunk.id;
-    }
-    trackStream = Stream(trackChunk.data);
-    while (!trackStream.eof()) {
-      event = readEvent(trackStream);
-      tracks[i].push(event);
-    }
-  }
-
-  return {
-    header: {
-      formatType: formatType,
-      trackCount: trackCount,
-      ticksPerBeat: ticksPerBeat
-    },
-    tracks: tracks
-  };
-
-  function readChunk(stream) {
-    var id = stream.read(4),
-      length = stream.readInt32();
-
-    return {
-      id: id,
-      length: length,
-      data: stream.read(length)
-    };
-  }
-
-  function readEvent(stream) {
-    var event = { deltaTime: stream.readVarInt() },
-      eventTypeByte = stream.readInt8(),
-      length,
-      hourByte,
-      param1,
-      eventType;
-
-    if ((eventTypeByte & 0xf0) === 0xf0) {
-
-      if (eventTypeByte === 0xff) { // Meta event
-        event.type = 'meta';
-        event.subtype = stream.readInt8();
-        length = stream.readVarInt();
-        switch (event.subtype) {
-          case META_EVENT.COPYRIGHT_NOTICE:
-          case META_EVENT.CUE_POINT:
-          case META_EVENT.INSTRUMENT_NAME:
-          case META_EVENT.LYRICS:
-          case META_EVENT.MARKER:
-          case META_EVENT.SEQUENCER_SPECIFIC:
-          case META_EVENT.TEXT:
-          case META_EVENT.TRACK_NAME:
-            event.text = stream.read(length);
-            return event;
-          case META_EVENT.SEQUENCE_NUMBER:
-            if (length !== 2) {
-              throw 'Expected length for sequenceNumber event is 2, got ' + length;
-            }
-            event.number = stream.readInt16();
-            return event;
-          case META_EVENT.MIDI_CHANNEL_PREFIX:
-            if (length !== 1) {
-              throw 'Expected length for midiChannelPrefix event is 1, got ' + length;
-            }
-            event.channel = stream.readInt8();
-            return event;
-          case META_EVENT.END_OF_TRACK:
-            if (length !== 0) {
-              throw 'Expected length for endOfTrack event is 0, got ' + length;
-            }
-            return event;
-          case META_EVENT.SET_TEMPO:
-            if (length !== 3) {
-              throw 'Expected length for setTempo event is 3, got ' + length;
-            }
-            event.microsecondsPerBeat = (
-              (stream.readInt8() << 16)
-              + (stream.readInt8() << 8)
-              + stream.readInt8()
-            );
-            return event;
-          case META_EVENT.SMPTE_OFFSET:
-            if (length !== 5) {
-              throw 'Expected length for smpteOffset event is 5, got ' + length;
-            }
-            hourByte = stream.readInt8();
-            event.frameRate = {
-              0x00: 24, 0x20: 25, 0x40: 29, 0x60: 30
-            }[hourByte & 0x60];
-            event.hour = hourByte & 0x1f;
-            event.min = stream.readInt8();
-            event.sec = stream.readInt8();
-            event.frame = stream.readInt8();
-            event.subframe = stream.readInt8();
-            return event;
-          case META_EVENT.TIME_SIGNATURE:
-            if (length !== 4) {
-              throw 'Expected length for timeSignature event is 4, got ' + length;
-            }
-            event.numerator = stream.readInt8();
-            event.denominator = Math.pow(2, stream.readInt8());
-            event.metronome = stream.readInt8();
-            event.thirtyseconds = stream.readInt8();
-            return event;
-          case META_EVENT.KEY_SIGNATURE:
-            if (length !== 2) {
-              throw 'Expected length for keySignature event is 2, got ' + length;
-            }
-            event.key = stream.readInt8(true);
-            event.scale = stream.readInt8();
-            return event;
-          default:
-            event.subtype = 'unknown';
-            event.data = stream.read(length);
-            return event;
-        }
-      } else if (eventTypeByte === 0xf0) { // System event
-        event.type = 'sysEx';
-        length = stream.readVarInt();
-        event.data = stream.read(length);
-        return event;
-      } else if (eventTypeByte === 0xf7) { // System event
-        event.type = 'dividedSysEx';
-        length = stream.readVarInt();
-        event.data = stream.read(length);
-        return event;
-      }
-      throw 'Unrecognised MIDI event type byte: ' + eventTypeByte;
-    } else { // Channel event
-
-      if ((eventTypeByte & 0x80) === 0) {
-
-        // Running status - reuse lastEventTypeByte as the event type
-        // eventTypeByte is actually the first parameter
-        param1 = eventTypeByte;
-        eventTypeByte = lastEventTypeByte;
-
-      } else {
-        param1 = stream.readInt8();
-        lastEventTypeByte = eventTypeByte;
-      }
-
-      event.subtype = eventTypeByte & 0xf0;
-      event.channel = eventTypeByte & 0x0f;
-      event.type = 'channel';
-      switch (event.subtype) {
-        case EVENT.NOTE_OFF:
-          event.noteNumber = param1;
-          event.velocity = stream.readInt8();
-          return event;
-        case EVENT.NOTE_ON:
-          event.noteNumber = param1;
-          event.velocity = stream.readInt8();
-          event.subtype = event.velocity === 0 ? EVENT.NOTE_OFF : EVENT.NOTE_ON;
-          return event;
-        case EVENT.AFTER_TOUCH:
-          event.noteNumber = param1;
-          event.amount = stream.readInt8();
-          return event;
-        case EVENT.CONTROL_CHANGE:
-          event.controllerType = param1;
-          event.value = stream.readInt8();
-          return event;
-        case EVENT.PROGRAM_CHANGE:
-          event.programNumber = param1;
-          return event;
-        case EVENT.CHANNEL_AFTERTOUCH:
-          event.amount = param1;
-          return event;
-        case EVENT.PITCH_BEND:
-          event.value = param1 + (stream.readInt8() << 7);
-          return event;
-        default:
-          throw 'Unrecognised MIDI event type: ' + eventType;
-      }
-    }
-  }
-}
 
 /**
  * Convert a symbolic note name (e.g. 'c4') to a numeric MIDI pitch (e.g.
@@ -716,21 +439,20 @@ MidiEvent.prototype.toBytes = function() {
 };
 
 var DEFAULT_VOLUME = 90;
-var Track;
 /**
  * Construct a MIDI track.
  *
  * Parameters include:
  *  - events [optional array] - Array of events for the track.
  */
-Track = function(config) {
-  if (!this) return new Track(config);
+exports.Track = function(config) {
+  if (!this) return new exports.Track(config);
   var c = config || {};
   this.events = c.events || [];
 };
 
-Track.START_BYTES = [0x4d, 0x54, 0x72, 0x6b];
-Track.END_BYTES = [0x00, 0xFF, 0x2F, 0x00];
+exports.Track.START_BYTES = [0x4d, 0x54, 0x72, 0x6b];
+exports.Track.END_BYTES = [0x00, 0xFF, 0x2F, 0x00];
 
 /**
  * Add an event to the track.
@@ -738,7 +460,7 @@ Track.END_BYTES = [0x00, 0xFF, 0x2F, 0x00];
  * @param {MidiEvent|MetaEvent} event - The event to add.
  * @returns {Track} The current track.
  */
-Track.prototype.addEvent = function(event) {
+exports.Track.prototype.addEvent = function(event) {
   this.events.push(event);
   return this;
 };
@@ -755,7 +477,7 @@ Track.prototype.addEvent = function(event) {
  * DEFAULT_VOLUME.
  * @returns {Track} The current track.
  */
-Track.prototype.addNoteOn = function(channel, pitch, time, velocity) {
+exports.Track.prototype.addNoteOn = function(channel, pitch, time, velocity) {
   this.events.push(new MidiEvent({
     type: EVENT.NOTE_ON,
     channel: channel,
@@ -778,7 +500,7 @@ Track.prototype.addNoteOn = function(channel, pitch, time, velocity) {
  * defaults to DEFAULT_VOLUME.
  * @returns {Track} The current track.
  */
-Track.prototype.addNoteOff = function(channel, pitch, time, velocity) {
+exports.Track.prototype.addNoteOff = function(channel, pitch, time, velocity) {
   this.events.push(new MidiEvent({
     type: EVENT.NOTE_OFF,
     channel: channel,
@@ -789,7 +511,7 @@ Track.prototype.addNoteOff = function(channel, pitch, time, velocity) {
   return this;
 };
 
-Track.prototype.addSustainOn = function(channel, time) {
+exports.Track.prototype.addSustainOn = function(channel, time) {
   this.events.push(new MidiEvent({
     type: EVENT.CONTROL_CHANGE,
     channel: channel,
@@ -800,7 +522,7 @@ Track.prototype.addSustainOn = function(channel, time) {
   return this;
 };
 
-Track.prototype.addSustainOff = function(channel, time) {
+exports.Track.prototype.addSustainOff = function(channel, time) {
   this.events.push(new MidiEvent({
     type: EVENT.CONTROL_CHANGE,
     channel: channel,
@@ -824,7 +546,7 @@ Track.prototype.addSustainOff = function(channel, time) {
  * defaults to DEFAULT_VOLUME.
  * @returns {Track} The current track.
  */
-Track.prototype.addNote = function(channel, pitch, dur, time, velocity) {
+exports.Track.prototype.addNote = function(channel, pitch, dur, time, velocity) {
   this.noteOn(channel, pitch, time, velocity);
   if (dur) {
     this.noteOff(channel, pitch, dur, velocity);
@@ -843,7 +565,7 @@ Track.prototype.addNote = function(channel, pitch, dur, time, velocity) {
  * defaults to DEFAULT_VOLUME.
  * @returns {Track} The current track.
  */
-Track.prototype.addChord = function(channel, chord, dur, velocity) {
+exports.Track.prototype.addChord = function(channel, chord, dur, velocity) {
   if (!Array.isArray(chord) && !chord.length) {
     throw new Error('Chord must be an array of pitches');
   }
@@ -869,7 +591,7 @@ Track.prototype.addChord = function(channel, chord, dur, velocity) {
  * defaults to 0.
  * @returns {Track} The current track.
  */
-Track.prototype.setInstrument = function(channel, instrument, time) {
+exports.Track.prototype.setInstrument = function(channel, instrument, time) {
   this.events.push(new MidiEvent({
     type: EVENT.PROGRAM_CHANGE,
     channel: channel,
@@ -879,7 +601,7 @@ Track.prototype.setInstrument = function(channel, instrument, time) {
   return this;
 };
 
-Track.prototype.setTimeSignature = function(numerator, denominator, time) {
+exports.Track.prototype.setTimeSignature = function(numerator, denominator, time) {
   this.events.push(new MetaEvent({
     type: META_EVENT.TIME_SIGNATURE,
     data: [
@@ -901,7 +623,7 @@ Track.prototype.setTimeSignature = function(numerator, denominator, time) {
  * defaults to 0.
  * @returns {Track} The current track.
  */
-Track.prototype.setTempo = function(bpm, time) {
+exports.Track.prototype.setTempo = function(bpm, time) {
   this.events.push(new MetaEvent({
     type: META_EVENT.SET_TEMPO,
     data: mpqnFromBpm(bpm),
@@ -910,7 +632,7 @@ Track.prototype.setTempo = function(bpm, time) {
   return this;
 };
 
-Track.prototype.setName = function(name, time) {
+exports.Track.prototype.setName = function(name, time) {
   this.events.push(new MetaEvent({
     type: META_EVENT.TRACK_NAME,
     data: name,
@@ -924,12 +646,12 @@ Track.prototype.setName = function(name, time) {
  *
  * @returns {Array} The array of serialized bytes.
  */
-Track.prototype.toBytes = function() {
+exports.Track.prototype.toBytes = function() {
   var trackLength = 0,
     eventBytes = [],
     lengthBytes,
-    startBytes = Track.START_BYTES,
-    endBytes = Track.END_BYTES;
+    startBytes = exports.Track.START_BYTES,
+    endBytes = exports.Track.END_BYTES;
 
   function addEventBytes(event) {
     var bytes = event.toBytes();
@@ -949,8 +671,6 @@ Track.prototype.toBytes = function() {
 
   return startBytes.concat(lengthBytes, eventBytes, endBytes);
 };
-
-var Track$1 = Track;
 
 /**
  * Construct a file object.
@@ -992,7 +712,7 @@ File.prototype.addTrack = function(track) {
     this.tracks.push(track);
     return this;
   } else {
-    track = new Track$1();
+    track = new exports.Track();
     this.tracks.push(track);
     return track;
   }
@@ -1027,13 +747,6 @@ File.prototype.toBytes = function() {
   return bytes;
 };
 
-var MidiGen = {
-  File,
-  Track: Track$1,
-  MidiEvent,
-  MetaEvent,
-};
-
 function toArray(hash) {
   var arr = [],
     key;
@@ -1054,7 +767,7 @@ function isTruthy(a) {
 }
 
 function generate(midiJson) {
-  var destination = new MidiGen.File();
+  var destination = new File();
   midiJson.parts.forEach(copyTrack);
   return destination.toBytes();
 
@@ -1181,6 +894,283 @@ function convertToDeltaTime(result, event, index, events) {
     deltaTime: deltaTime,
     velocity: event.velocity
   });
+}
+
+/* Wrapper for accessing strings through sequential reads */
+function Stream(str) {
+  var position = 0;
+
+  return {
+    eof: eof,
+    read: read,
+    readInt32: readInt32,
+    readInt16: readInt16,
+    readInt8: readInt8,
+    readVarInt: readVarInt
+  };
+
+  function read(length) {
+    var result = str.substr(position, length);
+    position += length;
+    return result;
+  }
+
+  // Read a big-endian 32-bit integer
+  function readInt32() {
+    var result =
+      (str.charCodeAt(position) << 24) +
+      (str.charCodeAt(position + 1) << 16) +
+      (str.charCodeAt(position + 2) << 8) +
+      (str.charCodeAt(position + 3));
+    position += 4;
+    return result;
+  }
+
+  // Read a big-endian 16-bit integer
+  function readInt16() {
+    var result =
+      (str.charCodeAt(position) << 8) +
+      (str.charCodeAt(position + 1));
+    position += 2;
+    return result;
+  }
+
+  // Read an 8-bit integer
+  function readInt8(signed) {
+    var result = str.charCodeAt(position);
+    if (signed && result > 127) result -= 256;
+    position += 1;
+    return result;
+  }
+
+  function eof() {
+    return position >= str.length;
+  }
+
+  // Read a MIDI-style variable-length integer
+  // Big-endian value in groups of 7 bits,
+  // with top bit set to signify that another byte follows
+  function readVarInt() {
+    var result = 0,
+      b = readInt8();
+
+    while (b & 0x80) {
+      result += (b & 0x7f);
+      result <<= 7;
+      b = readInt8();
+    }
+    return result + b; // b is the last byte
+  }
+}
+
+function parseMidiFile(data) {
+  var lastEventTypeByte,
+    stream = Stream(data),
+    headerChunk = readChunk(stream),
+    tracks = [],
+    headerStream,
+    formatType,
+    trackCount,
+    ticksPerBeat,
+    i,
+    trackChunk,
+    trackStream,
+    event;
+
+  if (headerChunk.id !== 'MThd' || headerChunk.length !== 6) {
+    throw 'Bad .mid file - header not found';
+  }
+
+  headerStream = Stream(headerChunk.data);
+  formatType = headerStream.readInt16();
+  trackCount = headerStream.readInt16();
+  ticksPerBeat = headerStream.readInt16();
+
+  if (ticksPerBeat & 0x8000) {
+    throw 'Expressing time division in SMTPE frames is not supported yet';
+  }
+
+  for (i = 0; i < trackCount; i++) {
+    tracks[i] = [];
+    trackChunk = readChunk(stream);
+    if (trackChunk.id !== 'MTrk') {
+      throw 'Unexpected chunk - expected MTrk, got ' + trackChunk.id;
+    }
+    trackStream = Stream(trackChunk.data);
+    while (!trackStream.eof()) {
+      event = readEvent(trackStream);
+      tracks[i].push(event);
+    }
+  }
+
+  return {
+    header: {
+      formatType: formatType,
+      trackCount: trackCount,
+      ticksPerBeat: ticksPerBeat
+    },
+    tracks: tracks
+  };
+
+  function readChunk(stream) {
+    var id = stream.read(4),
+      length = stream.readInt32();
+
+    return {
+      id: id,
+      length: length,
+      data: stream.read(length)
+    };
+  }
+
+  function readEvent(stream) {
+    var event = { deltaTime: stream.readVarInt() },
+      eventTypeByte = stream.readInt8(),
+      length,
+      hourByte,
+      param1,
+      eventType;
+
+    if ((eventTypeByte & 0xf0) === 0xf0) {
+
+      if (eventTypeByte === 0xff) { // Meta event
+        event.type = 'meta';
+        event.subtype = stream.readInt8();
+        length = stream.readVarInt();
+        switch (event.subtype) {
+          case META_EVENT.COPYRIGHT_NOTICE:
+          case META_EVENT.CUE_POINT:
+          case META_EVENT.INSTRUMENT_NAME:
+          case META_EVENT.LYRICS:
+          case META_EVENT.MARKER:
+          case META_EVENT.SEQUENCER_SPECIFIC:
+          case META_EVENT.TEXT:
+          case META_EVENT.TRACK_NAME:
+            event.text = stream.read(length);
+            return event;
+          case META_EVENT.SEQUENCE_NUMBER:
+            if (length !== 2) {
+              throw 'Expected length for sequenceNumber event is 2, got ' + length;
+            }
+            event.number = stream.readInt16();
+            return event;
+          case META_EVENT.MIDI_CHANNEL_PREFIX:
+            if (length !== 1) {
+              throw 'Expected length for midiChannelPrefix event is 1, got ' + length;
+            }
+            event.channel = stream.readInt8();
+            return event;
+          case META_EVENT.END_OF_TRACK:
+            if (length !== 0) {
+              throw 'Expected length for endOfTrack event is 0, got ' + length;
+            }
+            return event;
+          case META_EVENT.SET_TEMPO:
+            if (length !== 3) {
+              throw 'Expected length for setTempo event is 3, got ' + length;
+            }
+            event.microsecondsPerBeat = (
+              (stream.readInt8() << 16)
+              + (stream.readInt8() << 8)
+              + stream.readInt8()
+            );
+            return event;
+          case META_EVENT.SMPTE_OFFSET:
+            if (length !== 5) {
+              throw 'Expected length for smpteOffset event is 5, got ' + length;
+            }
+            hourByte = stream.readInt8();
+            event.frameRate = {
+              0x00: 24, 0x20: 25, 0x40: 29, 0x60: 30
+            }[hourByte & 0x60];
+            event.hour = hourByte & 0x1f;
+            event.min = stream.readInt8();
+            event.sec = stream.readInt8();
+            event.frame = stream.readInt8();
+            event.subframe = stream.readInt8();
+            return event;
+          case META_EVENT.TIME_SIGNATURE:
+            if (length !== 4) {
+              throw 'Expected length for timeSignature event is 4, got ' + length;
+            }
+            event.numerator = stream.readInt8();
+            event.denominator = Math.pow(2, stream.readInt8());
+            event.metronome = stream.readInt8();
+            event.thirtyseconds = stream.readInt8();
+            return event;
+          case META_EVENT.KEY_SIGNATURE:
+            if (length !== 2) {
+              throw 'Expected length for keySignature event is 2, got ' + length;
+            }
+            event.key = stream.readInt8(true);
+            event.scale = stream.readInt8();
+            return event;
+          default:
+            event.subtype = 'unknown';
+            event.data = stream.read(length);
+            return event;
+        }
+      } else if (eventTypeByte === 0xf0) { // System event
+        event.type = 'sysEx';
+        length = stream.readVarInt();
+        event.data = stream.read(length);
+        return event;
+      } else if (eventTypeByte === 0xf7) { // System event
+        event.type = 'dividedSysEx';
+        length = stream.readVarInt();
+        event.data = stream.read(length);
+        return event;
+      }
+      throw 'Unrecognised MIDI event type byte: ' + eventTypeByte;
+    } else { // Channel event
+
+      if ((eventTypeByte & 0x80) === 0) {
+
+        // Running status - reuse lastEventTypeByte as the event type
+        // eventTypeByte is actually the first parameter
+        param1 = eventTypeByte;
+        eventTypeByte = lastEventTypeByte;
+
+      } else {
+        param1 = stream.readInt8();
+        lastEventTypeByte = eventTypeByte;
+      }
+
+      event.subtype = eventTypeByte & 0xf0;
+      event.channel = eventTypeByte & 0x0f;
+      event.type = 'channel';
+      switch (event.subtype) {
+        case EVENT.NOTE_OFF:
+          event.noteNumber = param1;
+          event.velocity = stream.readInt8();
+          return event;
+        case EVENT.NOTE_ON:
+          event.noteNumber = param1;
+          event.velocity = stream.readInt8();
+          event.subtype = event.velocity === 0 ? EVENT.NOTE_OFF : EVENT.NOTE_ON;
+          return event;
+        case EVENT.AFTER_TOUCH:
+          event.noteNumber = param1;
+          event.amount = stream.readInt8();
+          return event;
+        case EVENT.CONTROL_CHANGE:
+          event.controllerType = param1;
+          event.value = stream.readInt8();
+          return event;
+        case EVENT.PROGRAM_CHANGE:
+          event.programNumber = param1;
+          return event;
+        case EVENT.CHANNEL_AFTERTOUCH:
+          event.amount = param1;
+          return event;
+        case EVENT.PITCH_BEND:
+          event.value = param1 + (stream.readInt8() << 7);
+          return event;
+        default:
+          throw 'Unrecognised MIDI event type: ' + eventType;
+      }
+    }
+  }
 }
 
 /**
@@ -1358,27 +1348,6 @@ function getTempo(events) {
   return event ? 60000000 / event.microsecondsPerBeat : null;
 }
 
-var MidiConvert = {
-  generate,
-  MidiGen,
-  parse,
-
-  bpmFromMpqn,
-  codes2Str,
-  ensureMidiPitch,
-  midiPitchFromNote,
-  mpqnFromBpm,
-  noteFromMidiPitch,
-  secondsToTicks,
-  str2Bytes,
-  ticksToSeconds,
-  translateTickTime,
-
-  midiFlattenedNotes,
-  midiLetterPitches,
-  midiPitchesLetter
-};
-
 /**
  *  Convert a midi file to a Tone.Part-friendly JSON representation
  *  @param {Blob} fileBlob The output from fs.readFile or FileReader
@@ -1386,7 +1355,7 @@ var MidiConvert = {
  *  @return {Object} A Tone.js-friendly object which can be consumed by Tone.Part
  */
 function parse(fileBlob, options) {
-  var midiJson = MidiFile(fileBlob);
+  var midiJson = parseMidiFile(fileBlob);
 
   if (midiJson.header.formatType === 0) {
     midiJson.tracks = splitType0(midiJson.tracks[0]);
@@ -1423,6 +1392,23 @@ function splitType0(track) {
   }
 }
 
-return MidiConvert;
+exports.generate = generate;
+exports.parse = parse;
+exports.File = File;
+exports.bpmFromMpqn = bpmFromMpqn;
+exports.codes2Str = codes2Str;
+exports.ensureMidiPitch = ensureMidiPitch;
+exports.midiPitchFromNote = midiPitchFromNote;
+exports.mpqnFromBpm = mpqnFromBpm;
+exports.noteFromMidiPitch = noteFromMidiPitch;
+exports.secondsToTicks = secondsToTicks;
+exports.str2Bytes = str2Bytes;
+exports.ticksToSeconds = ticksToSeconds;
+exports.translateTickTime = translateTickTime;
+exports.midiFlattenedNotes = midiFlattenedNotes;
+exports.midiLetterPitches = midiLetterPitches;
+exports.midiPitchesLetter = midiPitchesLetter;
+
+Object.defineProperty(exports, '__esModule', { value: true });
 
 })));

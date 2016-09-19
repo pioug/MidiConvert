@@ -1,10 +1,10 @@
-import MidiGen from './MidiGen.js';
+import { File } from './MidiGenFile.js';
 import { flatten, isTruthy } from './Util.js';
 
-export default generate;
+export { generate };
 
 function generate(midiJson) {
-  var destination = new MidiGen.File();
+  var destination = new File();
   midiJson.parts.forEach(copyTrack);
   return destination.toBytes();
 
