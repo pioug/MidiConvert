@@ -439,6 +439,7 @@ MidiEvent.prototype.toBytes = function() {
 };
 
 var DEFAULT_VOLUME = 90;
+
 /**
  * Construct a MIDI track.
  *
@@ -1176,8 +1177,8 @@ function parseMidiFile(data) {
 /**
  *  Convert MIDI PPQ into Tone.js PPQ
  */
-function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
-  return Math.round(tick / ticksPerBeat * PPQ) + 'i';
+function ticksToToneTicks(tick, ticksPerBeat, PPQ$$1) {
+  return Math.round(tick / ticksPerBeat * PPQ$$1) + 'i';
 }
 
 /**
@@ -1354,7 +1355,7 @@ function getTempo(events) {
  *  @param {Object} options The parsing options
  *  @return {Object} A Tone.js-friendly object which can be consumed by Tone.Part
  */
-function parse(fileBlob, options) {
+function parse$1(fileBlob, options) {
   var midiJson = parseMidiFile(fileBlob);
 
   if (midiJson.header.formatType === 0) {
@@ -1393,7 +1394,7 @@ function splitType0(track) {
 }
 
 exports.generate = generate;
-exports.parse = parse;
+exports.parse = parse$1;
 exports.File = File;
 exports.bpmFromMpqn = bpmFromMpqn;
 exports.codes2Str = codes2Str;

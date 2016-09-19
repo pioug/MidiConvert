@@ -21,11 +21,11 @@
   },
   "devDependencies": {
     "ava": "0.16.0",
-    "coveralls": "2.11.12",
-    "eslint": "3.4.0",
-    "eslint-config-bandlab": "3.4.0",
+    "coveralls": "2.11.13",
+    "eslint": "3.5.0",
+    "eslint-config-bandlab": "3.5.0",
     "google-closure-compiler": "20160713.2.0",
-    "nyc": "8.1.0",
-    "rollup": "0.34.13"
+    "nyc": "8.3.0",
+    "rollup": "0.36.0"
   }
 }
