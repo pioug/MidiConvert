@@ -7,7 +7,7 @@ export default parseParts;
  *  Convert MIDI PPQ into Tone.js PPQ
  */
 function ticksToToneTicks(tick, ticksPerBeat, PPQ) {
-  return Math.round(tick / ticksPerBeat * PPQ) + 'i';
+  return (Math.round(tick / ticksPerBeat * PPQ) || 0) + 'i';
 }
 
 /**
