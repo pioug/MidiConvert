@@ -1178,7 +1178,7 @@ function parseMidiFile(data) {
  *  Convert MIDI PPQ into Tone.js PPQ
  */
 function ticksToToneTicks(tick, ticksPerBeat, PPQ$$1) {
-  return Math.round(tick / ticksPerBeat * PPQ$$1) + 'i';
+  return (Math.round(tick / ticksPerBeat * PPQ$$1) || 0) + 'i';
 }
 
 /**
