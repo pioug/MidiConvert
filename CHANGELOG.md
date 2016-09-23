@@ -3,7 +3,7 @@
 ## 3.0.0-beta.9
 
 - Remove MidiGen level in API
-- Set zero instead of `NaN` for duration
+- Set zero duration when undefined
 
 ## 3.0.0-beta.8
 
