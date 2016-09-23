@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0-beta.9
+
+- Remove MidiGen level in API
+- Set zero instead of `NaN` for duration
+
 ## 3.0.0-beta.8
 
 - Move utils to first level of MidiConvert
