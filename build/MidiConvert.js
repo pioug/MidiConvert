@@ -259,88 +259,55 @@ function secondsToTicks(seconds, bpm, ppq = PPQ) {
 }
 
 /**
- * Construct a meta event.
  *
  * Parameters include:
  *  - time [optional number] - Ticks since previous event.
  *  - type [required number] - Type of event.
  *  - data [optional array|string] - Event data.
  */
-var MetaEvent = function(params) {
-  if (!this) return new MetaEvent(params);
-  this.setTime(params.time);
-  this.setType(params.type);
-  this.setData(params.data);
-};
+var MetaEvent = function({ time, type, data }) {
+  time = translateTickTime(time || 0);
 
-/**
- * Set the time for the event in ticks since the previous event.
- *
- * @param {number} ticks - The number of ticks since the previous event. May
- * be zero.
- */
-MetaEvent.prototype.setTime = function(ticks) {
-  this.time = translateTickTime(ticks || 0);
-};
+  return { toBytes };
 
-/**
- * Set the type of the event. Must be one of the event codes on MetaEvent.
- *
- * @param {number} t - Event type.
- */
-MetaEvent.prototype.setType = function(t) {
-  this.type = t;
-};
+  /**
+   * Serialize the event to an array of bytes.
+   * @returns {Array} The array of serialized bytes.
+   */
+  function toBytes() {
+    if (!type) {
+      throw new Error('Type for meta-event not specified.');
+    }
 
-/**
- * Set the data associated with the event. May be a string or array of byte
- * values.
- *
- * @param {string|Array} d - Event data.
- */
-MetaEvent.prototype.setData = function(d) {
-  this.data = d;
-};
+    var byteArray = [],
+      dataBytes;
+    byteArray.push.apply(byteArray, time);
+    byteArray.push(0xFF, type);
 
-/**
- * Serialize the event to an array of bytes.
- *
- * @returns {Array} The array of serialized bytes.
- */
-MetaEvent.prototype.toBytes = function() {
-  if (!this.type) {
-    throw new Error('Type for meta-event not specified.');
+    // If data is an array, we assume that it contains several bytes.
+    // We append them to byteArray.
+    if (Array.isArray(data)) {
+      byteArray.push(data.length);
+      byteArray.push.apply(byteArray, data);
+    } else if (typeof data === 'number') {
+      byteArray.push(1, data);
+    } else if (data !== null && typeof data !== 'undefined') {
+      // Assume string, it may be a bad assumption
+      byteArray.push(data.length);
+      dataBytes = data.split('').map(function(x) {
+        return x.charCodeAt(0);
+      });
+      byteArray.push.apply(byteArray, dataBytes);
+    } else {
+      byteArray.push(0);
+    }
+
+    return byteArray;
   }
-
-  var byteArray = [],
-    dataBytes;
-  byteArray.push.apply(byteArray, this.time);
-  byteArray.push(0xFF, this.type);
-
-  // If data is an array, we assume that it contains several bytes. We
-  // append them to byteArray.
-  if (Array.isArray(this.data)) {
-    byteArray.push(this.data.length);
-    byteArray.push.apply(byteArray, this.data);
-  } else if (typeof this.data === 'number') {
-    byteArray.push(1, this.data);
-  } else if (this.data !== null && typeof this.data !== 'undefined') {
-    // assume string; may be a bad assumption
-    byteArray.push(this.data.length);
-    dataBytes = this.data.split('').map(function(x) {
-      return x.charCodeAt(0);
-    });
-    byteArray.push.apply(byteArray, dataBytes);
-  } else {
-    byteArray.push(0);
-  }
-
-  return byteArray;
 };
 
 /**
  * Construct a MIDI event.
- *
  * Parameters include:
  *  - time [optional number] - Ticks since previous event.
  *  - type [required number] - Type of event.
@@ -348,95 +315,39 @@ MetaEvent.prototype.toBytes = function() {
  *  - param1 [required number] - First event parameter.
  *  - param2 [optional number] - Second event parameter.
  */
-var MidiEvent = function(params) {
-  if (!this) return new MidiEvent(params);
-  if (params &&
-      (params.type !== null || typeof params.type !== 'undefined') &&
-      (params.channel !== null || typeof params.channel !== 'undefined') &&
-      (params.param1 !== null || typeof params.param1 !== 'undefined')) {
-    this.setTime(params.time);
-    this.setType(params.type);
-    this.setChannel(params.channel);
-    this.setParam1(params.param1);
-    this.setParam2(params.param2);
-  }
-};
+function MidiEvent({ time, type, channel, param1, param2 }) {
 
-/**
- * Set the time for the event in ticks since the previous event.
- *
- * @param {number} ticks - The number of ticks since the previous event. May
- * be zero.
- */
-MidiEvent.prototype.setTime = function(ticks) {
-  this.time = translateTickTime(ticks || 0);
-};
-
-/**
- * Set the type of the event. Must be one of the event codes on MidiEvent.
- *
- * @param {number} type - Event type.
- */
-MidiEvent.prototype.setType = function(type) {
   if (type < EVENT.NOTE_OFF || type > EVENT.PITCH_BEND) {
     throw new Error('Trying to set an unknown event: ' + type);
   }
 
-  this.type = type;
-};
-
-/**
- * Set the channel for the event. Must be between 0 and 15, inclusive.
- *
- * @param {number} channel - The event channel.
- */
-MidiEvent.prototype.setChannel = function(channel) {
   if (channel < 0 || channel > 15) {
     throw new Error('Channel is out of bounds.');
   }
 
-  this.channel = channel;
-};
+  time = translateTickTime(time || 0);
 
-/**
- * Set the first parameter for the event. Must be between 0 and 255,
- * inclusive.
- *
- * @param {number} p - The first event parameter value.
- */
-MidiEvent.prototype.setParam1 = function(p) {
-  this.param1 = p;
-};
+  return { toBytes };
 
-/**
- * Set the second parameter for the event. Must be between 0 and 255,
- * inclusive.
- *
- * @param {number} p - The second event parameter value.
- */
-MidiEvent.prototype.setParam2 = function(p) {
-  this.param2 = p;
-};
+  /**
+   * Serialize the event to an array of bytes.
+   * @returns {Array} The array of serialized bytes.
+   */
+  function toBytes() {
+    var byteArray = [],
+      typeChannelByte = type | (channel & 0xF);
 
-/**
- * Serialize the event to an array of bytes.
- *
- * @returns {Array} The array of serialized bytes.
- */
-MidiEvent.prototype.toBytes = function() {
-  var byteArray = [],
-    typeChannelByte = this.type | (this.channel & 0xF);
+    byteArray.push.apply(byteArray, time);
+    byteArray.push(typeChannelByte);
+    byteArray.push(param1);
 
-  byteArray.push.apply(byteArray, this.time);
-  byteArray.push(typeChannelByte);
-  byteArray.push(this.param1);
-
-  // Some events don't have a second parameter
-  if (typeof this.param2 !== 'undefined' && this.param2 !== null) {
-    byteArray.push(this.param2);
+    // Some events don't have a second parameter
+    if (typeof param2 !== 'undefined' && param2 !== null) {
+      byteArray.push(param2);
+    }
+    return byteArray;
   }
-  return byteArray;
-};
+}
 
 var DEFAULT_VOLUME = 90;
 
